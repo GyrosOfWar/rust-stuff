@@ -159,12 +159,17 @@ impl Graph {
 		let mut i = 0u;
 
 		for line in file.lines() {
-			// let val: Vec<f64> = line.map(|l| {
-			// 	l.as_slice().split(' ').map(|i| from_str::<f64>(i)).collect()
-			// }).unwrap();
-
-			// let nodePt = NodePt::new(i, *val.get(0), *val.get(1));
-			line.map(|s| s.as_slice());
+			let mut numbers: Vec<f64> = Vec::new();
+			match line {
+				Ok(val) => {
+					for token in val.as_slice().split(' ') {
+						numbers.push(from_str::<f64>(token).unwrap());
+					}
+				},
+				Err(_) => fail!("Failed reading file.")
+			}
+			let point = NodePt::new(i, *numbers.get(0), *numbers.get(1));
+			nodes.push(point);
 			i += 1;
 		}
 
