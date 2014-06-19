@@ -3,6 +3,7 @@ extern crate time;
 use std::rand::{Rng, task_rng};
 use std::collections::HashMap;
 use time::precise_time_ns;
+use std::io::{File, BufferedReader, IoResult};
 
 pub type Node = uint;
 
@@ -60,14 +61,16 @@ impl Edge {
 #[deriving(Show)]
 pub struct Tour {
     nodes: Vec<Node>,
-    total_weight: f64
+    total_weight: f64,
+    fitness: f64
 }
 
 impl Tour {
 	fn new(nodes: Vec<Node>, weight: f64) -> Tour {
 		Tour {
 			nodes: nodes,
-			total_weight: weight
+			total_weight: weight,
+			fitness: 1.0 / weight
 		}
 	}
 
@@ -86,8 +89,9 @@ impl Tour {
 		let node_count = graph.adj_list.len();
 		let mut tour_nodes: Vec<Node> = range(0, node_count).collect();
 		rng.shuffle(tour_nodes.as_mut_slice());
+		let last: Node = *tour_nodes.last().unwrap();
+		tour_nodes.insert(0, last);
 		let tour_weight = Tour::calc_tour_weight(&tour_nodes, graph);
-
 		Tour::new(tour_nodes, tour_weight)
 	}
 
@@ -127,8 +131,7 @@ impl Graph {
 	fn random_graph<R: Rng>(rng: &mut R, num_nodes: uint, x_max: f64, y_max: f64) -> Graph {
 		let points = rng.gen_iter::<(f64, f64)>()
 			.enumerate()
-			.map(|t|
-				match t { (idx, (x, y)) => NodePt::new(idx, x * x_max, y * y_max) })
+			.map(|(idx, (x, y))| NodePt::new(idx, x * x_max, y * y_max))
 			.take(num_nodes)
 			.collect();
 
@@ -141,32 +144,39 @@ impl Graph {
 		}
 		else {
 			let edges = self.adj_list.get(&n);
-			let mut weight = 0.0;
-
-			for edge in edges.iter() {
-				if edge.to == m {
-					weight = edge.weight;
-				}
+			let result = edges.iter().filter(|edge| edge.to == m).nth(0);
+			match result {
+				Some(edge) => edge.weight,
+				None => 0.0
 			}
-			weight
 		}
 	}
 
+	fn from_file(file_path: &str) -> Graph {
+		let path = Path::new(file_path);
+		let mut file = BufferedReader::new(File::open(&path));
+		let mut nodes: Vec<NodePt> = Vec::new();
+		let mut i = 0u;
+
+		for line in file.lines() {
+			// let val: Vec<f64> = line.map(|l| {
+			// 	l.as_slice().split(' ').map(|i| from_str::<f64>(i)).collect()
+			// }).unwrap();
+
+			// let nodePt = NodePt::new(i, *val.get(0), *val.get(1));
+			line.map(|s| s.as_slice());
+			i += 1;
+		}
+
+		Graph::from_nodes(nodes)
+	}
 }
 
-
 fn main() {
+	let test = "20 14";
+	let split: Vec<f64> = test.split(' ').map(|i| from_str::<f64>(i).unwrap_or(0.0)).collect();
+	println!("{}", NodePt::new(0, *split.get(0), *split.get(1)))
+
 	let mut rng = task_rng();
-	let node_count = 4u;
-	let iters = 10000;
-	let graph = Graph::random_graph(&mut rng, node_count, 200.0, 200.0);
-
-	let t0 = time::precise_time_ns();
-	for _ in range(0, iters) {
-		let tour = Tour::random_tour(&mut rng, &graph);
-	}
-	let t1 = time::precise_time_ns();
-
-	let dt = (t1 - t0) as f64;
-	println!("{} iters: t = {} ms", iters, (dt / 1e6))
+	let graph = Graph::random_graph(&mut rng, 10, 200.0, 200.0);
 }
