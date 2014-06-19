@@ -130,22 +130,35 @@ fn calc_tour_weight(tour_pts: &Vec<NodePt>) -> f64 {
 	sum
 }
 
-fn random_tour(map: HashMap<Node, NodePt>, node_count: uint) -> Tour {
+fn random_tour(map: &HashMap<Node, NodePt>, node_count: uint) -> Tour {
 	let mut rng = task_rng();
 	let mut tour_nodes: Vec<uint> = range(0, node_count).collect();
 	rng.shuffle(tour_nodes.as_mut_slice());
 
-	let tour_pts: Vec<NodePt> = tour_nodes.iter().map(|id| map.get(id)).collect();
+	let mut tour_pts: Vec<NodePt> = Vec::new();
+	for n in tour_nodes.iter() {
+		tour_pts.push(*map.get(n));
+	}
+
 	let tour_weight = calc_tour_weight(&tour_pts);
 	Tour::new(tour_nodes, tour_weight)
 }
 
 fn main() {
-	let N = 5;
+	let N = 12;
 	let nodes = random_nodes(N, 300.0, 300.0);
-	let graph = make_complete_graph(nodes);
-	let map = make_adjacency_map(graph, N);
-	let adj_edges = map.get(&2);
+	let mut map: HashMap<Node, NodePt> = HashMap::new();
 
-	println!("{}", adj_edges);
+	for n in nodes.iter() {
+		map.insert(n.id, *n);
+	}
+
+	for i in range(0, 100000) {
+		let tour = random_tour(&map, N);
+	}
+	// let graph = make_complete_graph(nodes);
+	// let map = make_adjacency_map(graph, N);
+	// let adj_edges = map.get(&2);
+
+	//println!("{}", tour);
 }
