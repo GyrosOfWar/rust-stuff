@@ -1,21 +1,16 @@
+extern crate time;
+
 use std::rand::{Rng, task_rng};
 use std::collections::HashMap;
-use std::iter;
+use time::precise_time_ns;
 
-type Node = uint;
+pub type Node = uint;
 
 #[deriving(Show)]
-struct NodePt {
+pub struct NodePt {
     id: Node, 
     x: f64,
     y: f64
-}
-
-#[deriving(Show, Clone)]
-struct Edge {
-	from: Node,
-	to: Node,
-	weight: f64
 }
 
 impl NodePt {
@@ -45,6 +40,13 @@ impl PartialEq for NodePt {
 	}
 }
 
+#[deriving(Show, Clone)]
+pub struct Edge {
+	from: Node,
+	to: Node,
+	weight: f64
+}
+
 impl Edge {
 	fn new(a: NodePt, b: NodePt) -> Edge {
 		Edge {	
@@ -56,7 +58,7 @@ impl Edge {
 }
 
 #[deriving(Show)]
-struct Tour {
+pub struct Tour {
     nodes: Vec<Node>,
     total_weight: f64
 }
@@ -68,97 +70,103 @@ impl Tour {
 			total_weight: weight
 		}
 	}
+
+	fn calc_tour_weight(tour: &Vec<Node>, graph: &Graph) -> f64 {
+		let mut tour_weight = 0.0;
+		let mut last_node = tour.get(0u);
+		for node in tour.iter() {
+			tour_weight += graph.get(*last_node, *node);
+			last_node = node;
+		}
+
+		tour_weight
+	}
+
+	fn random_tour<R: Rng>(rng: &mut R, graph: &Graph) -> Tour {
+		let node_count = graph.adj_list.len();
+		let mut tour_nodes: Vec<Node> = range(0, node_count).collect();
+		rng.shuffle(tour_nodes.as_mut_slice());
+		let tour_weight = Tour::calc_tour_weight(&tour_nodes, graph);
+
+		Tour::new(tour_nodes, tour_weight)
+	}
+
 }
 
-fn make_complete_graph(nodes: Vec<NodePt>) -> Vec<Edge> {
-	let mut edges: Vec<Edge> = Vec::new();
+#[deriving(Show)]
+pub struct Graph {
+	adj_list: HashMap<Node, Vec<Edge>>
+}
 
-	for x in nodes.iter() {
-		for y in nodes.iter() {
-			if x.id != y.id {
-				let e = Edge::new(*x, *y);
-				edges.push(e);
-			}
+impl Graph {
+	fn new(adj_list: HashMap<Node, Vec<Edge>>) -> Graph {
+		Graph {
+			adj_list: adj_list
 		}
 	}
 
-	edges
-}
+	fn from_nodes(nodes: Vec<NodePt>) -> Graph {
+		let mut map: HashMap<Node, Vec<Edge>> = HashMap::new();
+		for i in range(0, nodes.len()) {
+			let mut adj_edges: Vec<Edge> = Vec::new();
 
-fn random_nodes(n: uint, x_max: f64, y_max: f64) -> Vec<NodePt> {
-	let mut rng1 = task_rng();
-	let mut rng2 = task_rng();
-	let rngIter1 = rng1.gen_iter::<f64>();
-	let rngIter2 = rng2.gen_iter::<f64>();
+			for j in range(0, nodes.len()) {
+				let a = nodes.get(i);
+				let b = nodes.get(j);
+				if i != j {
+					adj_edges.push(Edge::new(*a, *b));
+				}
+			}
 
-	rngIter1.zip(rngIter2)
-		.enumerate()
-		.map(|t| 
-			match t { (idx, (x, y)) => NodePt::new(idx, x * x_max, y * y_max) })
-		.take(n)
-		.collect()
-}
+			map.insert(i, adj_edges);
+		}
 
-fn make_adjacency_map(edges: Vec<Edge>, node_count: uint) -> HashMap<Node, Vec<Edge>> {
-	let mut map: HashMap<Node, Vec<Edge>> = HashMap::new();
+		Graph::new(map)
+	}
 
-	for i in range(0, node_count) {
-		let adj_edges = edges.iter()
-			.map(|x| x.clone())
-			.filter(|edge| edge.from == i)
+	fn random_graph<R: Rng>(rng: &mut R, num_nodes: uint, x_max: f64, y_max: f64) -> Graph {
+		let points = rng.gen_iter::<(f64, f64)>()
+			.enumerate()
+			.map(|t|
+				match t { (idx, (x, y)) => NodePt::new(idx, x * x_max, y * y_max) })
+			.take(num_nodes)
 			.collect();
-		map.insert(i, adj_edges);
+
+		Graph::from_nodes(points)
+	} 
+
+	fn get(&self, n: Node, m: Node) -> f64 {
+		if n == m {
+			0.0
+		}
+		else {
+			let edges = self.adj_list.get(&n);
+			let mut weight = 0.0;
+
+			for edge in edges.iter() {
+				if edge.to == m {
+					weight = edge.weight;
+				}
+			}
+			weight
+		}
 	}
 
-	map
 }
 
-
-
-fn calc_tour_weight(tour_pts: &Vec<NodePt>) -> f64 {
-	let mut sum = 0.0;
-	let mut last = tour_pts.get(0);
-
-	for point in tour_pts.iter() {
-		sum += last.distance_to(*point);
-		last = point;
-	}
-	if (tour_pts.get(0) != last) {
-		sum += last.distance_to(*tour_pts.get(0));
-	}
-
-	sum
-}
-
-fn random_tour(map: &HashMap<Node, NodePt>, node_count: uint) -> Tour {
-	let mut rng = task_rng();
-	let mut tour_nodes: Vec<uint> = range(0, node_count).collect();
-	rng.shuffle(tour_nodes.as_mut_slice());
-
-	let mut tour_pts: Vec<NodePt> = Vec::new();
-	for n in tour_nodes.iter() {
-		tour_pts.push(*map.get(n));
-	}
-
-	let tour_weight = calc_tour_weight(&tour_pts);
-	Tour::new(tour_nodes, tour_weight)
-}
 
 fn main() {
-	let N = 12;
-	let nodes = random_nodes(N, 300.0, 300.0);
-	let mut map: HashMap<Node, NodePt> = HashMap::new();
+	let mut rng = task_rng();
+	let node_count = 4u;
+	let iters = 10000;
+	let graph = Graph::random_graph(&mut rng, node_count, 200.0, 200.0);
 
-	for n in nodes.iter() {
-		map.insert(n.id, *n);
+	let t0 = time::precise_time_ns();
+	for _ in range(0, iters) {
+		let tour = Tour::random_tour(&mut rng, &graph);
 	}
+	let t1 = time::precise_time_ns();
 
-	for i in range(0, 100000) {
-		let tour = random_tour(&map, N);
-	}
-	// let graph = make_complete_graph(nodes);
-	// let map = make_adjacency_map(graph, N);
-	// let adj_edges = map.get(&2);
-
-	//println!("{}", tour);
+	let dt = (t1 - t0) as f64;
+	println!("{} iters: t = {} ms", iters, (dt / 1e6))
 }
