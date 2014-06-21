@@ -89,7 +89,6 @@ impl Tour {
         }
     }
 
-    // TODO add weight between first and last node to the tour weight
     fn calc_tour_weight(tour: &Vec<Node>, graph: &Graph) -> f64 {
         let mut tour_weight = 0.0;
         let mut last_node = tour.get(0u);
@@ -98,16 +97,17 @@ impl Tour {
             tour_weight += graph.get(*last_node, *node);
             last_node = node;
         }
-
+        let last = match tour.last() {
+            Some(l) => l,
+            None => fail!("Empty tour!")
+        };
+        tour_weight += graph.get(*tour.get(0), *last);
         tour_weight
     }
-    // TODO for ease of crossover between tours, don't add the
-    //      first node again
+
     fn random_tour<R: Rng>(rng: &mut R, graph: &Graph) -> Tour {
         let mut tour_nodes = graph.nodes();
         rng.shuffle(tour_nodes.as_mut_slice());
-        let last: Node = *tour_nodes.last().unwrap();
-        tour_nodes.insert(0, last);
         let tour_weight = Tour::calc_tour_weight(&tour_nodes, graph);
         Tour::new(tour_nodes, tour_weight)
     }
@@ -141,17 +141,32 @@ impl Tour {
         if end > start {
             std::mem::swap(&mut start, &mut end);
         }
-        // TODO fix this (produces invalid tours)
+
         let new_tour = Vec::from_fn(size, |i| {
             if i >= start && i <= end {
-                *self.nodes.get(i)
+                Some(*self.nodes.get(i))
             } else {
-                *other.nodes.get(i)
+                None
             }
         });
 
-        let tour_weight = Tour::calc_tour_weight(&new_tour, graph);
-        Tour::new(new_tour, tour_weight)
+        let mut i = 0;
+        let mut new_tour_2: Vec<Node> = Vec::new();
+        for node in new_tour.iter() {
+            match *node {
+                Some(n) => new_tour_2.push(n),
+                None => { 
+                    let v = Some(*other.nodes.get(i));
+                    if !new_tour.contains(&v) {
+                        new_tour_2.push(v.unwrap());
+                    }
+                    i += 1;
+                }
+            }
+        }
+
+        let tour_weight = Tour::calc_tour_weight(&new_tour_2, graph);
+        Tour::new(new_tour_2, tour_weight)
     }
 }
 
@@ -325,24 +340,30 @@ fn find_min<E: PartialOrd+Clone>(xs: &Vec<E>) -> E {
 }
 
 fn main() {
-    // let mut rng: StdRng = match StdRng::new() {
-    //     Ok(r) => r,
-    //     Err(why) => fail!("failed to acquire RNG")
-    // };
-    let mut rng: StdRng = SeedableRng::from_seed(&[12, 13, 14, 15]);
-    let graph = Graph::random_graph(&mut rng, 10, 200.0, 200.0);
-    //let graph = Graph::from_file("graph.txt");
+    let iter_count = 100;
+    let node_count = 15;
+    let mutation_rate = 0.03;
+    let tournament_size = 5;
+    let population_size = 10000;
+    let scale = 200.0;
 
-    let mut pop = Population::new(10000, box graph, 0.01, 15, rng);
-    println!("Fittest at start: {}", pop.fittest())
+    let rng: StdRng = match StdRng::new() {
+        Ok(r) => r,
+        Err(_) => fail!("failed to acquire RNG")
+    };
+    let mut s_rng: StdRng = SeedableRng::from_seed(&[12, 13, 14, 15]);
+
+    let graph = Graph::random_graph(&mut s_rng, node_count, scale, scale);
+    let mut pop = Population::new(population_size, box graph, mutation_rate, tournament_size, rng);
+    println!("Fittest at start: {}", pop.fittest().total_weight)
 
     let t0 = precise_time_ns();
-    for _ in range(0, 100) {
+    for _ in range(0, iter_count) {
         pop = pop.evolve();
     }
     let t1 = precise_time_ns();
 
-    println!("Fittest at end: {}", pop.fittest())
+    println!("Fittest at end: {}", pop.fittest().total_weight)
     let dt = ((t1-t0) as f64) / 1e6;
-    println!("t_avg = {} ms", dt / 100.0);
+    println!("t_avg = {} ms", dt / iter_count as f64);
 }
