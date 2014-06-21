@@ -89,6 +89,7 @@ impl Tour {
         }
     }
 
+    // TODO add weight between first and last node to the tour weight
     fn calc_tour_weight(tour: &Vec<Node>, graph: &Graph) -> f64 {
         let mut tour_weight = 0.0;
         let mut last_node = tour.get(0u);
@@ -100,7 +101,8 @@ impl Tour {
 
         tour_weight
     }
-
+    // TODO for ease of crossover between tours, don't add the
+    //      first node again
     fn random_tour<R: Rng>(rng: &mut R, graph: &Graph) -> Tour {
         let mut tour_nodes = graph.nodes();
         rng.shuffle(tour_nodes.as_mut_slice());
@@ -139,7 +141,7 @@ impl Tour {
         if end > start {
             std::mem::swap(&mut start, &mut end);
         }
-
+        // TODO fix this (produces invalid tours)
         let new_tour = Vec::from_fn(size, |i| {
             if i >= start && i <= end {
                 *self.nodes.get(i)
@@ -328,8 +330,10 @@ fn main() {
     //     Err(why) => fail!("failed to acquire RNG")
     // };
     let mut rng: StdRng = SeedableRng::from_seed(&[12, 13, 14, 15]);
-    let graph = Graph::random_graph(&mut rng, 25, 200.0, 200.0);
-    let mut pop = Population::new(5000, box graph, 0.03, 5, rng);
+    let graph = Graph::random_graph(&mut rng, 10, 200.0, 200.0);
+    //let graph = Graph::from_file("graph.txt");
+
+    let mut pop = Population::new(10000, box graph, 0.01, 15, rng);
     println!("Fittest at start: {}", pop.fittest())
 
     let t0 = precise_time_ns();
