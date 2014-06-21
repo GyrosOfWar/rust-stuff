@@ -5,6 +5,8 @@ use std::rand::distributions::{IndependentSample, Range};
 use std::collections::HashMap;
 use time::precise_time_ns;
 use std::io::{File, BufferedReader, IoResult};
+use std::iter::Repeat;
+use std::fmt;
 
 pub type Node = uint;
 
@@ -59,19 +61,33 @@ impl Edge {
 	}
 }
 
-#[deriving(Show)]
+#[deriving(Show, Clone)]
 pub struct Tour {
     nodes: Vec<Node>,
-    total_weight: f64,
-    fitness: f64
+    total_weight: f64
+}
+
+impl PartialEq for Tour {
+	fn eq(&self, other: &Tour) -> bool {
+		self.nodes == other.nodes
+	}
+
+	fn ne(&self, other: &Tour) -> bool {
+		self.nodes != other.nodes
+	}
+}
+
+impl PartialOrd for Tour {
+	fn lt(&self, other: &Tour) -> bool {
+		self.total_weight < other.total_weight
+	}
 }
 
 impl Tour {
 	fn new(nodes: Vec<Node>, weight: f64) -> Tour {
 		Tour {
 			nodes: nodes,
-			total_weight: weight,
-			fitness: 1.0 / weight
+			total_weight: weight
 		}
 	}
 
@@ -96,19 +112,22 @@ impl Tour {
 		Tour::new(tour_nodes, tour_weight)
 	}
 
-	fn mutate<R: Rng>(&mut self, rng: &mut R, graph: &Graph, mutationRate: f64) {
+	fn mutate<R: Rng>(&self, rng: &mut R, graph: &Graph, mutation_rate: f64) -> Tour {
 		let size = self.nodes.len() as f64;
+		let mut mutated: Vec<Node> = self.nodes.clone();
 
 		for i in range(0, self.nodes.len()) {
 			let t = rng.gen::<f64>();
-			if t < mutationRate {
+			if t < mutation_rate {
 				let j = (rng.gen::<f64>() * size) as uint;
-				self.nodes.as_mut_slice().swap(i, j);
+				mutated.as_mut_slice().swap(i, j);
 			}
 		}
-
-		self.total_weight = Tour::calc_tour_weight(&self.nodes, graph);
-		self.fitness = 1.0 / self.total_weight;
+		let weight = Tour::calc_tour_weight(&mutated, graph);
+		Tour {
+			nodes: mutated,
+			total_weight: weight
+		}
 	}
 
 	fn crossover<R: Rng>(&self, other: Tour, graph: &Graph, rng: &mut R) -> Tour {
@@ -122,7 +141,6 @@ impl Tour {
 		for i in range(0, size) {
 			if start < end && i > start && i < end {
 				//new_tour[i] = self.nodes.get(i);
-				println!("start {}, end {}", start, end);
 				new_tour.grow_set(i, &(std::uint::MAX), *self.nodes.get(i));
 			}
 			else if start > end {
@@ -186,7 +204,6 @@ impl Graph {
 			.map(|(idx, (x, y))| NodePt::new(idx, x * x_max, y * y_max))
 			.take(num_nodes)
 			.collect();
-		println!("num_nodes = {}", num_nodes);
 
 		Graph::from_nodes(points)
 	} 
@@ -250,28 +267,61 @@ impl Graph {
 }
 
 struct Population {
-	rng: Box<Rng>,
+	rng: StdRng,
 	graph: Box<Graph>,
-	population: Vec<Tour>
+	population: Vec<Tour>,
+	mutation_rate: f64,
+	tournament_size: uint
 }
 
 impl Population {
-	fn new(population_count: uint, graph: &Graph) -> Population {
-		unimplemented!();
+	fn new(population_count: uint, graph: Box<Graph>, mutation_rate: f64, tournament_size: uint) -> Population {
+		let mut rng: StdRng = SeedableRng::from_seed(&[12, 13, 14, 15]);
+		let population = Vec::from_fn(population_count, |_| Tour::random_tour(&mut rng, graph));
+
+		Population {
+			rng: rng,
+			graph: graph,
+			population: population,
+			mutation_rate: mutation_rate,
+			tournament_size: tournament_size
+		}
+	}
+
+	fn fittest(&self) -> Tour {
+		self.population.iter().fold(self.population.get(0), |min, next| if next < min { next } else { min }).clone()
+	}
+
+	fn tournament_selection(&mut self) -> Tour {
+		// let mut sample = self.population.clone();
+		// self.rng.shuffle(sample.as_mut_slice());
+		// let tournament: Vec<Tour> = sample.iter().take(self.tournament_size).collect();
+		// tournament.iter().fold(tournament.get(0), |min, next| if next < min {next} else {min}).clone()
+		let size = self.population.len();
+		let mut buffer: Vec<&Tour> = Vec::new();
+		for i in range(0, self.tournament_size) {
+			let t = (self.rng.gen::<f64>() * (size as f64)) as uint;
+			buffer.push(self.population.get(t));
+		}
+
+		buffer.iter().fold(buffer.get(0), |min, next| if next < min {next} else {min})
+	}
+
+	fn evolve(&mut self) {
+
+	}
+}
+
+impl fmt::Show for Population {
+	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+		write!(f, "Population: {}", self.population)
 	}
 }
 
 fn main() {
-	let mut rng: StdRng = SeedableRng::from_seed(&[1, 2, 3, 4]);
+	let mut rng: StdRng = SeedableRng::from_seed(&[12, 13, 14, 15]);
 	let graph = Graph::random_graph(&mut rng, 5, 200.0, 200.0);
-	let nodes: Vec<Node> = graph.adj_list.keys().map(|x| x.clone()).collect();
-	println!("graph.nodes = {}", nodes);
-
-	let tour = Tour::random_tour(&mut rng, &graph);
-	println!("tour: {}", tour);
-	// let tour1 = Tour::random_tour(&mut rng, &graph);
-	// let tour2 = Tour::random_tour(&mut rng, &graph);
-	// println!("tour 1 = {}\ntour 2 = {}", tour1, tour2);
-	// let child = tour1.crossover(tour2, &graph, &mut rng);
-	// println!("child  = {}", child);
+	let pop = Population::new(5, box graph, 0.015, 5);
+	println!("{}", pop);
+	println!("{}", pop.fittest())
 }
