@@ -1,8 +1,8 @@
-//extern crate time;
+extern crate time;
 
 use std::rand::{Rng, SeedableRng, StdRng};
 use std::collections::HashMap;
-//use time::precise_time_ns;
+use time::precise_time_ns;
 use std::io::{File, BufferedReader};
 use std::fmt;
 
@@ -128,44 +128,6 @@ impl Tour {
         }
     }
 
-    // fn crossover<R: Rng>(&self, other: Tour, graph: &Graph, rng: &mut R) -> Tour {
-    //     let size = self.nodes.len();
-    //     let start = (rng.gen::<f64>() * (size as f64)) as uint;
-    //     let end = (rng.gen::<f64>() * (size as f64)) as uint;
-
-    //     assert!(self.nodes.len() == other.nodes.len());
-    //     println!("start = {}, end = {}", start, end)
-
-    //     let mut new_tour: Vec<Node> = Vec::new();
-    //     new_tour.grow_set(size - 1, &(std::uint::MAX), std::uint::MAX);
-
-    //     for i in range(0, size) {
-    //         if start < end && i > start && i < end {
-    //             //new_tour.grow_set(i, &(std::uint::MAX), *self.nodes.get(i));
-    //             *new_tour.get_mut(i) = *self.nodes.get(i);
-    //         }
-    //         else if start > end {
-    //             if !(i < start && i > end) {
-    //                 *new_tour.get_mut(i) = *self.nodes.get(i);
-    //             }
-    //         }
-    //     }
-
-    //     for i in range(0, size) {
-    //         if !new_tour.contains(other.nodes.get(i)) {
-    //             for j in range(0, new_tour.len()) {
-    //                 if *new_tour.get(j) == std::uint::MAX {
-    //                     *new_tour.get_mut(i) = *other.nodes.get(i);
-    //                     break;
-    //                 }
-    //             }
-    //         }
-    //     }
-    //     println!("new_tour = {}", new_tour)
-    //     let tour_weight = Tour::calc_tour_weight(&new_tour, graph);
-    //     Tour::new(new_tour, tour_weight)
-    // }
-
     fn crossover<R: Rng>(&self, other: Tour, graph: &Graph, rng: &mut R) -> Tour {
         let size = self.nodes.len();
         let mut start = (rng.gen::<f64>() * (size as f64)) as uint;
@@ -235,8 +197,7 @@ impl Graph {
     fn get(&self, n: Node, m: Node) -> f64 {
         if n == m {
             0.0
-        }
-        else {
+        } else {
             let edges = self.adj_list.get(&n);
             let result = edges.iter().filter(|edge| edge.to == m).nth(0);
             match result {
@@ -302,8 +263,7 @@ struct Population {
 }
 
 impl Population {
-    fn new(population_count: uint, graph: Box<Graph>, mutation_rate: f64, tournament_size: uint) -> Population {
-        let mut rng: StdRng = SeedableRng::from_seed(&[12, 13, 14, 15]);
+    fn new(population_count: uint, graph: Box<Graph>, mutation_rate: f64, tournament_size: uint, mut rng: StdRng) -> Population {
         let population = Vec::from_fn(population_count, |_| Tour::random_tour(&mut rng, graph));
 
         Population {
@@ -316,7 +276,7 @@ impl Population {
     }
 
     fn fittest(&self) -> Tour {
-        self.population.iter().fold(self.population.get(0), |min, next| if next < min { next } else { min }).clone()
+        find_min(&self.population)
     }
 
     fn tournament_selection(&mut self) -> Tour {
@@ -326,8 +286,7 @@ impl Population {
             let t = (self.rng.gen::<f64>() * (size as f64)) as uint;
             buffer.push(self.population.get(t).clone());
         }
-
-        buffer.iter().fold(buffer.get(0), |min, next| if next < min {next} else {min}).clone()
+        find_min(&buffer)
     }
 
     fn evolve(&mut self) -> Population {
@@ -358,18 +317,28 @@ impl fmt::Show for Population {
     }
 }
 
+fn find_min<E: PartialOrd+Clone>(xs: &Vec<E>) -> E {
+    let ref min = *xs.iter().fold(xs.get(0), |min, next| if next < min {next} else {min});
+    min.clone()
+}
+
 fn main() {
-    let mut rng: StdRng = match StdRng::new() {
-        Ok(r) => r,
-        Err(why) => fail!("failed to acquire RNG")
-    };
+    // let mut rng: StdRng = match StdRng::new() {
+    //     Ok(r) => r,
+    //     Err(why) => fail!("failed to acquire RNG")
+    // };
+    let mut rng: StdRng = SeedableRng::from_seed(&[12, 13, 14, 15]);
     let graph = Graph::random_graph(&mut rng, 25, 200.0, 200.0);
-    let mut pop = Population::new(10000, box graph, 0.015, 5);
+    let mut pop = Population::new(5000, box graph, 0.03, 5, rng);
     println!("Fittest at start: {}", pop.fittest())
 
+    let t0 = precise_time_ns();
     for _ in range(0, 100) {
         pop = pop.evolve();
     }
+    let t1 = precise_time_ns();
 
     println!("Fittest at end: {}", pop.fittest())
+    let dt = ((t1-t0) as f64) / 1e6;
+    println!("t_avg = {} ms", dt / 100.0);
 }
