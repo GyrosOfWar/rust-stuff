@@ -1,10 +1,16 @@
 extern crate time;
+extern crate graphviz;
 
 use std::rand::{Rng, SeedableRng, StdRng};
 use std::collections::HashMap;
 use time::precise_time_ns;
 use std::io::{File, BufferedReader};
 use std::fmt;
+use std::str;
+use std::io::File;
+
+use dot = graphviz;
+use graphviz::maybe_owned_vec::IntoMaybeOwnedVector;
 
 pub type Node = uint;
 
@@ -59,6 +65,38 @@ impl Edge {
     }
 }
 
+impl PartialEq for Edge {
+    fn eq(&self, other: &Edge) -> bool {
+        self.from == other.from && self.to == other.to 
+    }
+
+    fn ne(&self, other: &Edge) -> bool {
+        self.from != other.from && self.to != other.to
+    }
+}
+
+impl Eq for Edge {}
+
+impl PartialOrd for Edge {
+    fn lt(&self, other: &Edge) -> bool {
+        self.weight < other.weight
+    }
+}
+
+impl Ord for Edge {
+    fn cmp(&self, other: &Edge) -> Ordering {
+        if (self.weight < other.weight) {
+            Less
+        }
+        else if (self.weight == other.weight) {
+            Equal
+        }
+        else {
+            Greater
+        }
+    }
+}
+
 #[deriving(Show, Clone)]
 pub struct Tour {
     nodes: Vec<Node>,
@@ -106,7 +144,7 @@ impl Tour {
     }
 
     fn random_tour<R: Rng>(rng: &mut R, graph: &Graph) -> Tour {
-        let mut tour_nodes = graph.nodes();
+        let mut tour_nodes = graph.get_nodes();
         rng.shuffle(tour_nodes.as_mut_slice());
         let tour_weight = Tour::calc_tour_weight(&tour_nodes, graph);
         Tour::new(tour_nodes, tour_weight)
@@ -182,6 +220,23 @@ impl Graph {
         }
     }
 
+    fn from_edges(edges: Vec<Edge>, node_count: uint) -> Graph {
+        let mut map: HashMap<Node, Vec<Edge>> = HashMap::new();
+
+        for i in range(0, node_count) {
+            //let adj_edges: Vec<Edge> = edges.iter().filter(|e| e.from == i).collect();
+            let mut adj_edges: Vec<Edge> = Vec::new();
+            for edge in edges.iter() {
+                if edge.from == i {
+                    adj_edges.push(*edge);
+                }
+            }
+            map.insert(i, adj_edges);
+        }
+
+        Graph::new(map)
+    }
+
     fn from_nodes(nodes: Vec<NodePt>) -> Graph {
         let mut map: HashMap<Node, Vec<Edge>> = HashMap::new();
         for i in range(0, nodes.len()) {
@@ -224,12 +279,37 @@ impl Graph {
         }
     }
 
+    fn get_edge(&self, n: Node, m: Node) -> Edge {
+        if n == m {
+            fail!("No edge from {} to {}!", n, m);
+        }
+        let edges = self.adj_list.get(&n);
+        let result = edges.iter().filter(|edge| edge.to == m).nth(0);
+        match result {
+            Some(edge) => *edge,
+            None => fail!("No edge from {} to {}!", n, m)
+        }
+    }
+
+    fn all_edges(&self) -> Vec<Edge> {
+        let mut all_edges: Vec<Edge> = Vec::new();
+
+        for edge_list in self.adj_list.values() {
+            all_edges.push_all(edge_list.as_slice());
+        }
+        all_edges.sort();
+        all_edges.dedup();
+
+        all_edges
+    }
+
     fn size(&self) -> uint {
         self.adj_list.len()
     }
 
-    fn nodes(&self) -> Vec<Node> {
-        range(0, self.size()).collect()
+    fn get_nodes(&self) -> Vec<Node> {
+        let nodes: Vec<Node> = range(0, self.size()).collect();
+        nodes
     }
 
     #[allow(dead_code)]
@@ -337,6 +417,65 @@ impl fmt::Show for Population {
 fn find_min<E: PartialOrd+Clone>(xs: &Vec<E>) -> E {
     let ref min = *xs.iter().fold(xs.get(0), |min, next| if next < min {next} else {min});
     min.clone()
+}
+
+pub fn render_to<W: Writer>(output: &mut W, graph: &Graph) {
+    dot::render(graph, output).unwrap()
+}
+
+impl<'a> dot::Labeller<'a, Node, Edge> for Graph {
+    fn graph_id(&'a self) -> dot::Id<'a> {
+        dot::Id::new("TSP")
+    }
+
+    fn node_id(&'a self, n: &Node) -> dot::Id<'a> {
+        dot::Id::new(format!("N{}", *n))
+    }
+}
+
+impl<'a> dot::GraphWalk<'a, Node, Edge> for Graph {
+    fn nodes(&'a self) -> dot::Nodes<'a, Node> {
+        let ref v: &'a Graph = self;
+        let c: Vec<Node> = range(0, v.adj_list.len()).collect();
+        c.into_maybe_owned()
+    }
+    fn edges(&'a self) -> dot::Edges<'a,Edge> {
+        let ref v: &'a Graph = self;
+        let mut all_edges: Vec<Edge> = Vec::new();
+
+        for edge_list in v.adj_list.values() {
+            all_edges.push_all(edge_list.as_slice());
+        }
+        all_edges.sort();
+        all_edges.dedup();
+
+        all_edges.into_maybe_owned()
+
+    }
+    fn source(&self, e: &Edge) -> Node { 
+        e.from 
+    }
+    fn target(&self, e: &Edge) -> Node {
+        e.to
+    }
+}
+
+fn tour_to_edges(tour: Vec<Node>, graph: &Graph) -> Vec<Edge> {
+    let mut edges: Vec<Edge> = Vec::new();
+    let mut last_node = tour.get(0);
+    for i in range(1, tour.len()) {
+        let next_node = tour.get(i);
+        let edge = graph.get_edge(*last_node, *next_node);
+        edges.push(edge);
+        last_node = next_node;
+    }
+
+    edges
+}
+
+fn write_to_file(graph: &Graph, file_name: &str) {
+    let mut f = File::create(&Path::new(file_name));
+    render_to(&mut f, graph);
 }
 
 fn main() {

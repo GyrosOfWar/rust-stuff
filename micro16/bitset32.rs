@@ -18,4 +18,16 @@ impl BitSet32 {
         }
         (self.val & mask) >> start
 	}
+
+	fn and(&self, other: BitSet32) -> BitSet32 {
+		BitSet32 {val: self.val & other.val}
+	}
+
+	fn or(&self, other: BitSet32) -> BitSet32 {
+		BitSet32 {val: self.val | other.val}
+	}
+
+	fn xor(&self, other: BitSet32) -> BitSet32 {
+		BitSet32 {val: self.val ^ other.val}
+	}
 }
