@@ -3,6 +3,7 @@ use std::mem::swap;
 
 use nodept::Node;
 use graph::Graph;
+use edge::Edge;
 
 #[deriving(Show, Clone)]
 pub struct Tour {
@@ -33,7 +34,8 @@ impl Tour {
             total_weight: weight
         }
     }
-
+    // Calculates a tour's weight by summing up all the edge weights
+    // between the nodes.
     pub fn calc_tour_weight(tour: &Vec<Node>, graph: &Graph) -> f64 {
         let mut tour_weight = 0.0;
         let mut last_node = tour.get(0u);
@@ -49,7 +51,8 @@ impl Tour {
         tour_weight += graph.get(*tour.get(0), *last);
         tour_weight
     }
-
+    // Creates a random tour by taking a range of nodes [0..tour_len[
+    // and shuffling it.
     pub fn random_tour<R: Rng>(rng: &mut R, graph: &Graph) -> Tour {
         let mut tour_nodes = graph.get_nodes();
         rng.shuffle(tour_nodes.as_mut_slice());
@@ -57,6 +60,8 @@ impl Tour {
         Tour::new(tour_nodes, tour_weight)
     }
 
+    // Mutation works by looping over the tour and exchanging two
+    // random values in the tour.
     pub fn mutate<R: Rng>(&self, rng: &mut R, graph: &Graph, mutation_rate: f64) -> Tour {
         let size = self.nodes.len() as f64;
         let mut mutated: Vec<Node> = self.nodes.clone();
@@ -74,9 +79,14 @@ impl Tour {
             total_weight: weight
         }
     }
-
+    // Crossover takes two tours (parents) and returns their child.
+    // This takes a random start and end value, copies that range of 
+    // values over to the new tour from the first parent 
+    // and then copies missing values to the child in the second
+    // parent's order.
     pub fn crossover<R: Rng>(&self, other: Tour, graph: &Graph, rng: &mut R) -> Tour {
         let size = self.nodes.len();
+        // TODO use rng.gen_range for this
         let mut start = (rng.gen::<f64>() * (size as f64)) as uint;
         let mut end = (rng.gen::<f64>() * (size as f64)) as uint;
         if start == end {
@@ -112,5 +122,18 @@ impl Tour {
 
         let tour_weight = Tour::calc_tour_weight(&new_tour_2, graph);
         Tour::new(new_tour_2, tour_weight)
+    }
+
+    pub fn to_edges(&self, graph: &Graph) -> Vec<Edge> {
+        let mut edges: Vec<Edge> = Vec::new();
+        let mut last_node = self.nodes.get(0);
+        for i in range(1, self.nodes.len()) {
+            let next_node = self.nodes.get(i);
+            let edge = graph.get_edge(*last_node, *next_node);
+            edges.push(edge);
+            last_node = next_node;
+        }
+
+        edges
     }
 }

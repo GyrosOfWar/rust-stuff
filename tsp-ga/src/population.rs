@@ -13,6 +13,9 @@ pub struct Population {
 }
 
 impl Population {
+    // Creates a new population with a given size, on a given graph and with the given
+    // GA parameters (mutation rate and tournament size).
+    // The population is a list of tours, which are randomly generated.
     pub fn new(population_count: uint, graph: Box<Graph>, mutation_rate: f64, tournament_size: uint, mut rng: StdRng) -> Population {
         let population = Vec::from_fn(population_count, |_| Tour::random_tour(&mut rng, graph));
 
@@ -25,10 +28,13 @@ impl Population {
         }
     }
 
+    // Returns the fittest (lowest weighted) tour in the population. 
     pub fn fittest(&self) -> Tour {
         find_min(&self.population)
     }
 
+    // Selects (self.tournament.size) tours randomly from the population
+    // and returns the fittest one of those.
     pub fn tournament_selection(&mut self) -> Tour {
         let size = self.population.len();
         let mut buffer: Vec<Tour> = Vec::new();
@@ -38,7 +44,10 @@ impl Population {
         }
         find_min(&buffer)
     }
-
+    // Creates a new population based on the current one
+    // by taking two parents with a tournament selection,
+    // doing a crossover between them and then 
+    // potentially mutating the child.
     pub fn evolve(&mut self) -> Population {
         let mut new_population: Vec<Tour> = Vec::new();
 
@@ -66,7 +75,8 @@ impl fmt::Show for Population {
         write!(f, "Population: {}", self.population)
     }
 }
-
+// Utility function for finding the minimum in a list of 
+// values that only implement PartialOrd and not Ord.
 fn find_min<E: PartialOrd+Clone>(xs: &Vec<E>) -> E {
     let ref min = *xs.iter().fold(xs.get(0), |min, next| if next < min {next} else {min});
     min.clone()

@@ -34,7 +34,9 @@ impl Graph {
 
         Graph::new(map)
     }
-
+    
+    // Creates a complete graph from a list of NodePts (struct containing x-y coordinates and
+    // a node ID.)
     pub fn from_nodes(nodes: Vec<NodePt>) -> Graph {
         let mut map: HashMap<Node, Vec<Edge>> = HashMap::new();
         for i in range(0, nodes.len()) {
@@ -53,8 +55,11 @@ impl Graph {
 
         Graph::new(map)
     }
-
+    // Creates a random, euclidean, complete graph with a given number of nodes
+    // and a scaling factor. The scaling factor affects the range of the coordinates being generated.
     pub fn random_graph<R: Rng>(rng: &mut R, num_nodes: uint, x_max: f64, y_max: f64) -> Graph {
+        // Generates a list of 2-tuples of floats, adds an incrementing counter to each 
+        // tuple and creates a NodePt (node with ID and 2D coordinates) from it.
         let points = rng.gen_iter::<(f64, f64)>()
             .enumerate()
             .map(|(idx, (x, y))| NodePt::new(idx, x * x_max, y * y_max))
@@ -63,7 +68,8 @@ impl Graph {
 
         Graph::from_nodes(points)
     } 
-
+    // Returns the weight of the edge between node n and m.
+    // If n == m, returns 0. (maybe return f64::INFINITY?)
     pub fn get(&self, n: Node, m: Node) -> f64 {
         if n == m {
             0.0
@@ -76,7 +82,8 @@ impl Graph {
             }
         }
     }
-
+    // Returns the edge between nodes n and m. An edge
+    // has two node IDs (from, to) and a weight.
     pub fn get_edge(&self, n: Node, m: Node) -> Edge {
         if n == m {
             fail!("No edge from {} to {}!", n, m);
@@ -88,7 +95,8 @@ impl Graph {
             None => fail!("No edge from {} to {}!", n, m)
         }
     }
-
+    // Returns a list of all edges in the graph, without duplicates
+    // and sorted by their weight.
     pub fn all_edges(&self) -> Vec<Edge> {
         let mut all_edges: Vec<Edge> = Vec::new();
 
