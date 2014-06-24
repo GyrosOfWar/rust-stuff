@@ -1,4 +1,5 @@
 use std::rand::Rng;
+use std::f64::INFINITY;
 use std::mem::swap;
 
 use nodept::Node;
@@ -38,10 +39,11 @@ impl Tour {
     // between the nodes.
     pub fn calc_tour_weight(tour: &Vec<Node>, graph: &Graph) -> f64 {
         let mut tour_weight = 0.0;
-        let mut last_node = tour.get(0u);
+        let mut last_node = *tour.get(0u);
 
-        for node in tour.iter() {
-            tour_weight += graph.get(*last_node, *node);
+        for node in range(1, tour.len()) {
+            let x = graph.get(last_node, node);
+            tour_weight += x;
             last_node = node;
         }
         let last = match tour.last() {

@@ -120,6 +120,7 @@ fn main() {
     let t0 = precise_time_ns();
     for _ in range(0, iter_count) {
         pop = pop.evolve();
+        println!("{}", pop.fittest().total_weight)
     }
     let t1 = precise_time_ns();
 

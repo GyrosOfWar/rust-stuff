@@ -9,7 +9,7 @@ pub struct Edge {
 
 impl Edge {
     pub fn new(a: NodePt, b: NodePt) -> Edge {
-        Edge {  
+        Edge {
             from: a.id,
             to: b.id,
             weight: a.distance_to(b)

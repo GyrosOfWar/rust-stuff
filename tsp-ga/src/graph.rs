@@ -66,7 +66,6 @@ impl Graph {
             adj_matrix: matrix, 
             num_nodes: num_nodes
         };
-        println!("{}", g)
         g
     }
 
