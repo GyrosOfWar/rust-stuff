@@ -6,6 +6,17 @@ use std::collections::HashMap;
 use std::io::BufferedReader;
 use std::io::File;
 
+// #[deriving(Show, Clone)]
+// pub struct AdjMatrixGraph<'a> {
+//     pub adj_matrix: &'a [&'a [f64]]
+// }
+
+// impl AdjMatrixGraph {
+//     pub fn new<'a>(matrix: &'a [&'a f64]) {
+//         AdjMatrixGraph {adj_matrix: matrix}
+//     }
+// }
+
 #[deriving(Show, Clone)]
 pub struct Graph {
     pub adj_list: HashMap<Node, Vec<Edge>>
@@ -38,18 +49,30 @@ impl Graph {
     // Creates a complete graph from a list of NodePts (struct containing x-y coordinates and
     // a node ID.)
     pub fn from_nodes(nodes: Vec<NodePt>) -> Graph {
+        let mut edges: Vec<Edge> = Vec::new();
+
+        for a in nodes.iter() {
+            for b in nodes.iter() {
+                if a.id != b.id {
+                    let edge = Edge::new(*a, *b);
+                   // let rev = edge.reverse();
+                    //if !edges.contains(&edge) && !edges.contains(&rev) {
+                    edges.push(edge);
+                    //}
+                }
+            }
+        }
+
         let mut map: HashMap<Node, Vec<Edge>> = HashMap::new();
+
         for i in range(0, nodes.len()) {
             let mut adj_edges: Vec<Edge> = Vec::new();
 
-            for j in range(0, nodes.len()) {
-                let a = nodes.get(i);
-                let b = nodes.get(j);
-                if i != j {
-                    adj_edges.push(Edge::new(*a, *b));
+            for edge in edges.iter() {
+                if edge.from == i {
+                    adj_edges.push(*edge);
                 }
             }
-
             map.insert(i, adj_edges);
         }
 
@@ -105,20 +128,19 @@ impl Graph {
         }
         all_edges.sort();
         all_edges.dedup();
-
         all_edges
     }
 
-    pub fn size(&self) -> uint {
+    pub fn node_count(&self) -> uint {
         self.adj_list.len()
     }
 
     pub fn get_nodes(&self) -> Vec<Node> {
-        let nodes: Vec<Node> = range(0, self.size()).collect();
+        let nodes: Vec<Node> = range(0, self.node_count()).collect();
         nodes
     }
 
-    fn read_point(string: &str, index: uint) -> Option<NodePt> {
+    fn read_point(string: &str) -> Option<NodePt> {
         let mut end = string.len() - 1;
         if !string.ends_with("\n") {
             end += 1;
@@ -131,9 +153,9 @@ impl Graph {
             .filter(|f| f.is_some())
             .map(|o| o.unwrap())
             .collect();
-        println!("{}\n", numbers)
-        if numbers.len() == 2 {
-            Some(NodePt::new(index, *numbers.get(0), *numbers.get(1)))
+        if numbers.len() >= 3 {
+            let result = NodePt::new((*numbers.get(0) as uint) - 1, *numbers.get(1), *numbers.get(2));
+            Some(result)
         }
         else {  
             None
@@ -145,9 +167,8 @@ impl Graph {
         let path = Path::new(file_path);
         let mut file = BufferedReader::new(File::open(&path));
         let node_opts: Vec<Option<NodePt>> = file.lines()
-            .enumerate()
-            .map(|(i, r)| match r {
-                Ok(string) => Graph::read_point(string.as_slice(), i),
+            .map(|r| match r {
+                Ok(string) => Graph::read_point(string.as_slice()),
                 Err(_) => fail!("failed to read")
             })
             .collect();

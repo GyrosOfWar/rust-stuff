@@ -15,6 +15,14 @@ impl Edge {
             weight: a.distance_to(b)
         }
     }
+
+    pub fn reverse(&self) -> Edge {
+        Edge {
+            from: self.to,
+            to: self.from,
+            weight: self.weight
+        }
+    }
 }
 
 impl PartialEq for Edge {

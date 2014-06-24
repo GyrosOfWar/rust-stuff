@@ -23,6 +23,7 @@ pub mod graphviz_conv;
 static DEFAULT_ITERS: uint = 50;
 static DEFAULT_MUT_RATE: f64 = 0.015;
 static DEFAULT_POP_SIZE: uint = 5000;
+static DEFAULT_TOURNAMENT_SIZE: uint = 5;
 
 fn write_to_file(graph: &Graph, file_name: &str) {
     let mut f = File::create(&Path::new(file_name));
@@ -53,11 +54,12 @@ fn main() {
 
     let opts = [
         optflag("h", "help", "print this help menu"), 
-        optopt("m", "mutrate", "change the mutation rate (default: 0.015)", "MUTRATE"),
+        optopt("m", "mutation_rate", "change the mutation rate (default: 0.015)", "MUTRATE"),
         optopt("i", "iters", "change the number of GA iterations (default: 50)", "ITERS"),
-        optopt("p", "popsize", "change the population size (default: 5000)", "POPSIZE"),
+        optopt("p", "pop_size", "change the population size (default: 5000)", "POPSIZE"),
         optflag("v", "verbose", "print a lot of information, including timing."),
-        optopt("r", "read", "read graph from a file", "READ")
+        optopt("r", "read", "read graph from a file", "READ"),
+        optopt("t", "tournament_size", "change the number of specimens used for tournament selection", "TSIZE")
     ];
 
     let matches = match getopts(args.tail(), opts) {
@@ -72,15 +74,12 @@ fn main() {
     let v_flag = matches.opt_present("v");
 
     let node_count = 15;
-    let tournament_size = 5;
+    let tournament_size = parse_opt::<uint>(&matches, "t", DEFAULT_TOURNAMENT_SIZE);
     let scale = 200.0;
     let mutation_rate = parse_opt::<f64>(&matches, "m", DEFAULT_MUT_RATE);
     let iter_count = parse_opt::<uint>(&matches, "i", DEFAULT_ITERS);
     let population_size = parse_opt::<uint>(&matches, "p", DEFAULT_POP_SIZE);
 
-
-    // Generate a random graph and a population of tours, print out the best
-    // of those tours to start with.
     let mut graph_opt: Option<Graph> = None;
 
     if matches.opt_present("r") {
@@ -100,11 +99,12 @@ fn main() {
 
     //let graph = Graph::random_graph(&mut s_rng, node_count, scale, scale);
     if v_flag {
-        println!("Running TSP-GA on a graph with |N| = {}, |E| = {}", node_count, graph.all_edges().len())
+        println!("Running TSP-GA on a graph with |N| = {}, |E| = {}", graph.node_count(), graph.all_edges().len())
         println!("GA parameters:")
         println!("\tMutation rate = {}", mutation_rate)
         println!("\tPopulation size = {}", population_size)
         println!("\tNumber of iterations = {}", iter_count)
+        println!("\tTournament size = {}", tournament_size)
     }
 
     // RNG for the GA
@@ -126,7 +126,7 @@ fn main() {
 
     // Show the end result and the time it took.
     let result = pop.fittest();
-    println!("Resulting tour: {} with weight {}", result.nodes, result.total_weight)
+    println!("Resulting tour: {}\nwith weight {}", result.nodes, result.total_weight)
     if v_flag {
         let dt = ((t1-t0) as f64) / 1e6;
         println!("t_avg = {} ms, t_overall = {} s", dt / iter_count as f64, dt / 1000.0);
