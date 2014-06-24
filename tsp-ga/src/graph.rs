@@ -118,40 +118,43 @@ impl Graph {
         nodes
     }
 
-    #[allow(dead_code)]
+    fn read_point(string: &str, index: uint) -> Option<NodePt> {
+        let mut end = string.len() - 1;
+        if !string.ends_with("\n") {
+            end += 1;
+        }
+
+        let numbers: Vec<f64> = string
+            .slice_to(end)
+            .split(' ')
+            .map(|x| from_str::<f64>(x))
+            .filter(|f| f.is_some())
+            .map(|o| o.unwrap())
+            .collect();
+        println!("{}\n", numbers)
+        if numbers.len() == 2 {
+            Some(NodePt::new(index, *numbers.get(0), *numbers.get(1)))
+        }
+        else {  
+            None
+        }
+        
+    }
+
     pub fn from_file(file_path: &str) -> Graph {
         let path = Path::new(file_path);
         let mut file = BufferedReader::new(File::open(&path));
-        let mut nodes: Vec<NodePt> = Vec::new();
-        let mut i = 0u;
-
-        for line in file.lines() {
-            let mut numbers: Vec<f64> = Vec::new();
-            // This could be a lot nicer
-            match line {
-                Ok(val) => {
-                    for token in val.as_slice().split(' ') {
-                        if token == "\n" {
-                            continue
-                        }
-
-                        let n = match from_str::<f64>(token) {
-                            Some(num) => num,
-                            None => continue
-                        };
-                        numbers.push(n);
-                    }
-                },
-                Err(_) => fail!("Failed reading file.")
-            }
-
-            if numbers.len() == 2 {
-                let point = NodePt::new(i, *numbers.get(0), *numbers.get(1));
-                nodes.push(point);
-            }
-
-            i += 1;
-        }
+        let node_opts: Vec<Option<NodePt>> = file.lines()
+            .enumerate()
+            .map(|(i, r)| match r {
+                Ok(string) => Graph::read_point(string.as_slice(), i),
+                Err(_) => fail!("failed to read")
+            })
+            .collect();
+        let nodes = node_opts.iter()
+            .filter(|x| x.is_some())
+            .map(|y| y.unwrap())
+            .collect();
 
         Graph::from_nodes(nodes)
     }
