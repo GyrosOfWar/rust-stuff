@@ -1,3 +1,4 @@
+
 use edge::Edge;
 use nodept::{Node, NodePt};
 
@@ -5,81 +6,70 @@ use std::rand::Rng;
 use std::collections::HashMap;
 use std::io::BufferedReader;
 use std::io::File;
+use std::f64::INFINITY;
+use std::fmt;
 
-// #[deriving(Show, Clone)]
-// pub struct AdjMatrixGraph<'a> {
-//     pub adj_matrix: &'a [&'a [f64]]
-// }
-
-// impl AdjMatrixGraph {
-//     pub fn new<'a>(matrix: &'a [&'a f64]) {
-//         AdjMatrixGraph {adj_matrix: matrix}
-//     }
-// }
-
-#[deriving(Show, Clone)]
+#[deriving(Clone)]
 pub struct Graph {
-    pub adj_list: HashMap<Node, Vec<Edge>>
+    pub num_nodes: uint,
+    pub adj_matrix: Vec<f64>
+}
+
+impl fmt::Show for Graph {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let mut s = String::new();
+
+        for i in range(0, self.num_nodes) {
+            for j in range(0, self.num_nodes) {
+                let w = self.get(i, j);
+                if w == INFINITY {
+                    s.push_str("∞\t");
+                }
+                else {
+                    s.push_str(w.to_str().append("\t").as_slice());
+                }
+            }
+            s.push_str("\n");
+        }
+
+        write!(f, "{}", s)
+    }
 }
 
 impl Graph {
-    pub fn new(adj_list: HashMap<Node, Vec<Edge>>) -> Graph {
-        Graph {
-            adj_list: adj_list
-        }
+    #[inline]
+    fn offset(i: uint, j: uint, n_nodes: uint) -> uint {
+        i + j * n_nodes
     }
 
-    pub fn from_edges(edges: Vec<Edge>, node_count: uint) -> Graph {
-        let mut map: HashMap<Node, Vec<Edge>> = HashMap::new();
-
-        for i in range(0, node_count) {
-            //let adj_edges: Vec<Edge> = edges.iter().filter(|e| e.from == i).collect();
-            let mut adj_edges: Vec<Edge> = Vec::new();
-            for edge in edges.iter() {
-                if edge.from == i {
-                    adj_edges.push(*edge);
-                }
-            }
-            map.insert(i, adj_edges);
-        }
-
-        Graph::new(map)
-    }
-    
-    // Creates a complete graph from a list of NodePts (struct containing x-y coordinates and
-    // a node ID.)
     pub fn from_nodes(nodes: Vec<NodePt>) -> Graph {
-        let mut edges: Vec<Edge> = Vec::new();
+        let num_nodes = nodes.len();
+        let size = (num_nodes * num_nodes);
+        let mut matrix: Vec<f64> = Vec::with_capacity(size);
+        matrix.grow_set(size - 1, &INFINITY, INFINITY);
 
         for a in nodes.iter() {
             for b in nodes.iter() {
-                if a.id != b.id {
-                    let edge = Edge::new(*a, *b);
-                   // let rev = edge.reverse();
-                    //if !edges.contains(&edge) && !edges.contains(&rev) {
-                    edges.push(edge);
-                    //}
+                let aId = a.id;
+                let bId = b.id;
+                let offset = Graph::offset(aId, bId, num_nodes);
+                if aId == bId {
+                    *matrix.get_mut(offset) = INFINITY;
+                } else {
+                    *matrix.get_mut(offset) = a.distance_to(*b);
                 }
+
             }
         }
 
-        let mut map: HashMap<Node, Vec<Edge>> = HashMap::new();
-
-        for i in range(0, nodes.len()) {
-            let mut adj_edges: Vec<Edge> = Vec::new();
-
-            for edge in edges.iter() {
-                if edge.from == i {
-                    adj_edges.push(*edge);
-                }
-            }
-            map.insert(i, adj_edges);
-        }
-
-        Graph::new(map)
+        let g = Graph {
+            adj_matrix: matrix, 
+            num_nodes: num_nodes
+        };
+        println!("{}", g)
+        g
     }
-    // Creates a random, euclidean, complete graph with a given number of nodes
-    // and a scaling factor. The scaling factor affects the range of the coordinates being generated.
+
     pub fn random_graph<R: Rng>(rng: &mut R, num_nodes: uint, x_max: f64, y_max: f64) -> Graph {
         // Generates a list of 2-tuples of floats, adds an incrementing counter to each 
         // tuple and creates a NodePt (node with ID and 2D coordinates) from it.
@@ -90,53 +80,38 @@ impl Graph {
             .collect();
 
         Graph::from_nodes(points)
-    } 
-    // Returns the weight of the edge between node n and m.
-    // If n == m, returns 0. (maybe return f64::INFINITY?)
+    }
+
+    #[inline]
     pub fn get(&self, n: Node, m: Node) -> f64 {
-        if n == m {
-            0.0
-        } else {
-            let edges = self.adj_list.get(&n);
-            let result = edges.iter().filter(|edge| edge.to == m).nth(0);
-            match result {
-                Some(edge) => edge.weight,
-                None => fail!("No edge found!")
+        let offset = Graph::offset(n, m, self.num_nodes);
+        let weight = *self.adj_matrix.get(offset);
+        weight
+    }
+
+    #[inline]
+    pub fn get_edge(&self, n: Node, m: Node) -> Edge {
+        Edge {from: n, to: m, weight: self.get(n, m)}
+    }
+
+    pub fn all_edges(&self) -> Vec<Edge> {
+        let mut edges: Vec<Edge> = Vec::new();
+        let n = self.num_nodes;
+
+        for i in range(0, n) {
+            for j in range(0, n) {
+                let edge = self.get_edge(i, j);
+                if edge.weight != INFINITY {
+                    edges.push(edge);
+                }
             }
         }
-    }
-    // Returns the edge between nodes n and m. An edge
-    // has two node IDs (from, to) and a weight.
-    pub fn get_edge(&self, n: Node, m: Node) -> Edge {
-        if n == m {
-            fail!("No edge from {} to {}!", n, m);
-        }
-        let edges = self.adj_list.get(&n);
-        let result = edges.iter().filter(|edge| edge.to == m).nth(0);
-        match result {
-            Some(edge) => *edge,
-            None => fail!("No edge from {} to {}!", n, m)
-        }
-    }
-    // Returns a list of all edges in the graph, without duplicates
-    // and sorted by their weight.
-    pub fn all_edges(&self) -> Vec<Edge> {
-        let mut all_edges: Vec<Edge> = Vec::new();
 
-        for edge_list in self.adj_list.values() {
-            all_edges.push_all(edge_list.as_slice());
-        }
-        all_edges.sort();
-        all_edges.dedup();
-        all_edges
-    }
-
-    pub fn node_count(&self) -> uint {
-        self.adj_list.len()
+        edges
     }
 
     pub fn get_nodes(&self) -> Vec<Node> {
-        let nodes: Vec<Node> = range(0, self.node_count()).collect();
+        let nodes: Vec<Node> = range(0, self.num_nodes).collect();
         nodes
     }
 

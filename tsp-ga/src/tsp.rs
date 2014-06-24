@@ -58,7 +58,7 @@ fn main() {
         optopt("i", "iters", "change the number of GA iterations (default: 50)", "ITERS"),
         optopt("p", "pop_size", "change the population size (default: 5000)", "POPSIZE"),
         optflag("v", "verbose", "print a lot of information, including timing."),
-        optopt("r", "read", "read graph from a file", "READ"),
+        optopt("r", "read", "read graph from a .tsp file", "READ"),
         optopt("t", "tournament_size", "change the number of specimens used for tournament selection", "TSIZE")
     ];
 
@@ -97,9 +97,8 @@ fn main() {
 
     let graph = graph_opt.unwrap();
 
-    //let graph = Graph::random_graph(&mut s_rng, node_count, scale, scale);
     if v_flag {
-        println!("Running TSP-GA on a graph with |N| = {}, |E| = {}", graph.node_count(), graph.all_edges().len())
+        println!("Running TSP-GA on a graph with |N| = {}, |E| = {}", graph.num_nodes, graph.all_edges().len())
         println!("GA parameters:")
         println!("\tMutation rate = {}", mutation_rate)
         println!("\tPopulation size = {}", population_size)

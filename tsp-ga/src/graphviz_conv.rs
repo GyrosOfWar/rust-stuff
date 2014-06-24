@@ -22,19 +22,19 @@ impl<'a> dot::Labeller<'a, Node, Edge> for Graph {
 impl<'a> dot::GraphWalk<'a, Node, Edge> for Graph {
     fn nodes(&'a self) -> dot::Nodes<'a, Node> {
         let ref v: &'a Graph = self;
-        let c: Vec<Node> = range(0, v.adj_list.len()).collect();
+        let c: Vec<Node> = v.get_nodes();
         c.into_maybe_owned()
     }
     fn edges(&'a self) -> dot::Edges<'a,Edge> {
         let ref v: &'a Graph = self;
-        let mut all_edges: Vec<Edge> = Vec::new();
+        // let mut all_edges: Vec<Edge> = Vec::new();
 
-        for edge_list in v.adj_list.values() {
-            all_edges.push_all(edge_list.as_slice());
-        }
-        all_edges.sort();
-        all_edges.dedup();
-
+        // for edge_list in v.adj_list.values() {
+        //     all_edges.push_all(edge_list.as_slice());
+        // }
+        // all_edges.sort();
+        // all_edges.dedup();
+        let all_edges = v.all_edges();
         all_edges.into_maybe_owned()
 
     }

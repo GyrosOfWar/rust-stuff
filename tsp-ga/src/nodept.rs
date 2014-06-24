@@ -20,7 +20,7 @@ impl NodePt {
         let xx = (self.x - other.x) * (self.x - other.x);
         let yy = (self.y - other.y) * (self.y - other.y);
 
-        (xx+yy).sqrt()
+        (xx + yy).sqrt().round()
     }
 }
 
