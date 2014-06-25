@@ -37,7 +37,7 @@ pub fn render_to<W: Writer>(output: &mut W, graph: &Graph) {
 fn usage(program: &str, opts: &[OptGroup]) {
     println!("Usage: {} [options]\n", program);
     for o in opts.iter() {
-        println!("-{} --{}\t{}", o.short_name, o.long_name, o.desc);
+        println!("-{}--{}: {}", o.short_name, o.long_name, o.desc);
     }
 }
 
@@ -120,7 +120,6 @@ fn main() {
     let t0 = precise_time_ns();
     for _ in range(0, iter_count) {
         pop = pop.evolve();
-        println!("{}", pop.fittest().total_weight)
     }
     let t1 = precise_time_ns();
 

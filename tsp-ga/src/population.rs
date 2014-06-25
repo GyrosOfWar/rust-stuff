@@ -59,7 +59,7 @@ impl Population {
         }
 
         let mutated = new_population.iter().map(|tour| tour.mutate(&mut self.rng, self.graph, self.mutation_rate)).collect();
-
+        //println!("{}\n", mutated)
         Population {
             rng: self.rng,
             graph: self.graph.clone(),

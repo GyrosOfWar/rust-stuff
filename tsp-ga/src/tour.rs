@@ -41,7 +41,8 @@ impl Tour {
         let mut tour_weight = 0.0;
         let mut last_node = *tour.get(0u);
 
-        for node in range(1, tour.len()) {
+        for idx in range(1, tour.len()) {
+            let node = *tour.get(idx);
             let x = graph.get(last_node, node);
             tour_weight += x;
             last_node = node;
@@ -88,9 +89,9 @@ impl Tour {
     // parent's order.
     pub fn crossover<R: Rng>(&self, other: Tour, graph: &Graph, rng: &mut R) -> Tour {
         let size = self.nodes.len();
-        // TODO use rng.gen_range for this
-        let mut start = (rng.gen::<f64>() * (size as f64)) as uint;
-        let mut end = (rng.gen::<f64>() * (size as f64)) as uint;
+
+        let mut start = rng.gen_range::<uint>(0, size);
+        let mut end = rng.gen_range::<uint>(0, size);
         if start == end {
             return self.clone()
         }
@@ -106,7 +107,7 @@ impl Tour {
                 None
             }
         });
-
+        
         let mut i = 0;
         let mut new_tour_2: Vec<Node> = Vec::new();
         for node in new_tour.iter() {
@@ -121,7 +122,6 @@ impl Tour {
                 }
             }
         }
-
         let tour_weight = Tour::calc_tour_weight(&new_tour_2, graph);
         Tour::new(new_tour_2, tour_weight)
     }

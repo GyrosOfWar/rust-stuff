@@ -12,7 +12,7 @@ use std::fmt;
 #[deriving(Clone)]
 pub struct Graph {
     pub num_nodes: uint,
-    pub adj_matrix: Vec<f64>
+    adj_matrix: Vec<f64>
 }
 
 impl fmt::Show for Graph {
@@ -62,11 +62,10 @@ impl Graph {
             }
         }
 
-        let g = Graph {
+        Graph {
             adj_matrix: matrix, 
             num_nodes: num_nodes
-        };
-        g
+        }
     }
 
     pub fn random_graph<R: Rng>(rng: &mut R, num_nodes: uint, x_max: f64, y_max: f64) -> Graph {
