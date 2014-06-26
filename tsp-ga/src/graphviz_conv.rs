@@ -25,22 +25,17 @@ impl<'a> dot::GraphWalk<'a, Node, Edge> for Graph {
         let c: Vec<Node> = v.get_nodes();
         c.into_maybe_owned()
     }
+
     fn edges(&'a self) -> dot::Edges<'a,Edge> {
         let ref v: &'a Graph = self;
-        // let mut all_edges: Vec<Edge> = Vec::new();
-
-        // for edge_list in v.adj_list.values() {
-        //     all_edges.push_all(edge_list.as_slice());
-        // }
-        // all_edges.sort();
-        // all_edges.dedup();
         let all_edges = v.all_edges();
         all_edges.into_maybe_owned()
-
     }
+
     fn source(&self, e: &Edge) -> Node { 
         e.from 
     }
+    
     fn target(&self, e: &Edge) -> Node {
         e.to
     }

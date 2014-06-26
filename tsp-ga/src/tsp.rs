@@ -117,6 +117,7 @@ fn main() {
 
     let mut pop = Population::new(population_size, box graph, mutation_rate, tournament_size, rng);
     let first_result = pop.fittest().total_weight;
+    let mut best_result = pop.fittest();
     if v_flag {
         println!("Fittest at start: {}", first_result)
     }
@@ -124,15 +125,18 @@ fn main() {
     let t0 = precise_time_ns();
     for _ in range(0, iter_count) {
         pop = pop.evolve();
+        let r = pop.fittest();
+        if r.total_weight < best_result.total_weight {
+            best_result = r;
+        }
     }
     let t1 = precise_time_ns();
 
     // Show the end result and the time it took.
-    let result = pop.fittest();
-    println!("Resulting tour: {}\nwith weight {}", result.nodes, result.total_weight)
+    println!("Resulting tour: {}\nwith weight {}", best_result.nodes, best_result.total_weight)
     if v_flag {
         let dt = ((t1-t0) as f64) / 1e6;
         println!("t_avg = {} ms, t_overall = {} s", dt / iter_count as f64, dt / 1000.0);
-        println!("Improvement factor from first solution: {}", (first_result / result.total_weight))     
+        println!("Improvement factor from first solution: {}", (first_result / best_result.total_weight))     
     }
 }
