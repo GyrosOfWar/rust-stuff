@@ -2,6 +2,9 @@ extern crate time;
 extern crate graphviz;
 extern crate getopts;
 
+// TODO use terminal colors for nicer colored output
+//extern crate term;
+
 use dot = graphviz;
 use getopts::{optopt, optflag, getopts, OptGroup, Matches};
 use std::io::File;
