@@ -1,5 +1,4 @@
 use std::rand::Rng;
-use std::f64::INFINITY;
 use std::mem::swap;
 
 use nodept::Node;

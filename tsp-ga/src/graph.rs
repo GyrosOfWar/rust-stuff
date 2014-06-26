@@ -3,7 +3,6 @@ use edge::Edge;
 use nodept::{Node, NodePt};
 
 use std::rand::Rng;
-use std::collections::HashMap;
 use std::io::BufferedReader;
 use std::io::File;
 use std::f64::INFINITY;
@@ -44,7 +43,7 @@ impl Graph {
 
     pub fn from_nodes(nodes: Vec<NodePt>) -> Graph {
         let num_nodes = nodes.len();
-        let size = (num_nodes * num_nodes);
+        let size = num_nodes * num_nodes;
         let mut matrix: Vec<f64> = Vec::with_capacity(size);
         matrix.grow_set(size - 1, &INFINITY, INFINITY);
 
@@ -97,7 +96,7 @@ impl Graph {
         let n = self.num_nodes;
 
         for i in range(0, n) {
-            for j in range(0, n) {
+            for j in range(i, n) {
                 let edge = self.get_edge(i, j);
                 if edge.weight != INFINITY {
                     edges.push(edge);

@@ -20,10 +20,10 @@ pub mod population;
 pub mod tour;
 pub mod graphviz_conv;
 
-static DEFAULT_ITERS: uint = 50;
-static DEFAULT_MUT_RATE: f64 = 0.015;
-static DEFAULT_POP_SIZE: uint = 5000;
-static DEFAULT_TOURNAMENT_SIZE: uint = 5;
+static DEFAULT_ITERS: uint = 800;
+static DEFAULT_MUT_RATE: f64 = 0.02;
+static DEFAULT_POP_SIZE: uint = 200;
+static DEFAULT_TOURNAMENT_SIZE: uint = 15;
 
 fn write_to_file(graph: &Graph, file_name: &str) {
     let mut f = File::create(&Path::new(file_name));
@@ -37,7 +37,7 @@ pub fn render_to<W: Writer>(output: &mut W, graph: &Graph) {
 fn usage(program: &str, opts: &[OptGroup]) {
     println!("Usage: {} [options]\n", program);
     for o in opts.iter() {
-        println!("-{}--{}: {}", o.short_name, o.long_name, o.desc);
+        println!("-{}\t--{}: {}", o.short_name, o.long_name, o.desc);
     }
 }
 
@@ -113,8 +113,9 @@ fn main() {
     };
 
     let mut pop = Population::new(population_size, box graph, mutation_rate, tournament_size, rng);
+    let first_result = pop.fittest().total_weight;
     if v_flag {
-        println!("Fittest at start: {}", pop.fittest().total_weight)
+        println!("Fittest at start: {}", first_result)
     }
     // Evolve the population 
     let t0 = precise_time_ns();
@@ -129,5 +130,6 @@ fn main() {
     if v_flag {
         let dt = ((t1-t0) as f64) / 1e6;
         println!("t_avg = {} ms, t_overall = {} s", dt / iter_count as f64, dt / 1000.0);
+        println!("Improvement factor from first solution: {}", (first_result / result.total_weight))     
     }
 }
