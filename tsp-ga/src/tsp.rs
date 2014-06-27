@@ -6,7 +6,7 @@ extern crate rsfml;
 
 use rsfml::system::Vector2f;
 use rsfml::window::{ContextSettings, VideoMode, event, Close};
-use rsfml::graphics::{RenderWindow, CircleShape, Color};
+use rsfml::graphics::{RenderWindow, CircleShape, Color, VertexArray, Vertex, LinesStrip};
 
 // TODO use terminal colors for nicer colored output
 //extern crate term;
@@ -15,13 +15,14 @@ use dot = graphviz;
 use getopts::{optopt, optflag, getopts, OptGroup, Matches};
 use std::io::File;
 use std::os::args;
-use std::rand::{SeedableRng, StdRng, task_rng};
+use std::rand::{Rng, SeedableRng, StdRng, task_rng};
 use time::precise_time_ns;
 use std::from_str::FromStr;
+use std::collections::HashMap;
 
 use graph::Graph;
 use population::Population;
-use nodept::NodePt;
+use nodept::{NodePt, Node};
 
 pub mod edge;
 pub mod graph;
@@ -166,35 +167,61 @@ fn make_node_circles(nodes: &Vec<NodePt>) -> Vec<CircleShape> {
     circles
 }
 
+fn make_vertex_array(points: &Vec<NodePt>) -> VertexArray {
+    let mut vertex_array = VertexArray::new().expect("Failed to create VA");
+    vertex_array.set_primitive_type(LinesStrip);
+
+    for point in points.iter() {
+        let position = Vector2f::new(point.x as f32, point.y as f32);
+        vertex_array.append(&Vertex::new_with_pos_color(&position, &Color::black()));
+    }
+
+    vertex_array
+}
+
 fn sfml_main() {
-    let mut window = match RenderWindow::new(VideoMode::new_init(800, 800, 32), 
-                                             "TSP-GA visualizer", 
-                                             Close, 
-                                             &ContextSettings::default()) {
+    let mut window = 
+        match RenderWindow::new
+            (VideoMode::new_init(800, 800, 32), 
+            "TSP-GA visualizer", 
+            Close, 
+            &ContextSettings::default()) {
         Some(window) => window,
         None => fail!("Cannot create a new Render Window.")
     };
 
-    // Create a CircleShape
-    // let mut circle = match CircleShape::new() {
-    //     Some(circle) => circle,
-    //     None       => fail!("Error, cannot create ball")
-    // };
-    // circle.set_radius(30.);
-    // circle.set_fill_color(&Color::red());
-    // circle.set_position(&Vector2f::new(100., 100.));
     let scale = 800.0;
     let node_count = 25;
-    let mut s_rng = task_rng();
-
-    let points = s_rng.gen_iter::<(f64, f64)>()
-        .enumerate()
+    let mut s_rng: StdRng = SeedableRng::from_seed(&[12, 13, 14, 15]);
+    let tuples = s_rng.gen_iter::<(f64, f64)>();
+    let points: Vec<NodePt> = tuples.enumerate()
         .map(|(idx, (x, y))| NodePt::new(idx, x * scale, y * scale))
         .take(node_count)
         .collect();
 
-    let graph = Graph::from_nodes(points);
+    let graph = Graph::from_file("testdata/berlin52.tsp");
     let circles = make_node_circles(&points);
+
+    let rng: StdRng = match StdRng::new() {
+        Ok(r) => r,
+        Err(_) => fail!("failed to acquire RNG")
+    };
+    let mut pop = Population::new(250, box graph, 0.03, 15, rng);
+
+    for _ in range(0, 500) {
+        pop.evolve();
+    }
+
+    let result = pop.fittest();
+    println!("{}", result)
+    let mut nodeMap: HashMap<Node, NodePt> = HashMap::new();
+
+    for point in points.iter() {
+        nodeMap.insert(point.id, *point);
+    }
+
+    let result_positions: Vec<NodePt> = result.nodes.iter().map(|n| nodeMap.get(n).clone()).collect();
+    let result_vertices: VertexArray = make_vertex_array(&result_positions);
 
     while window.is_open() {
         // Handle events
@@ -206,9 +233,14 @@ fn sfml_main() {
         }
 
         // Clear the window
-        window.clear(&Color::new_RGB(0, 200, 200));
+        window.clear(&Color::new_RGB(255, 255, 255));
         // Draw the shape
         //window.draw(&circle);
+        for circle in circles.iter() {
+            window.draw(circle);
+        }
+        window.draw(&result_vertices);
+
         // Display things on screen
         window.display()
     }

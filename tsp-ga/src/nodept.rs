@@ -1,6 +1,6 @@
 pub type Node = uint;
 
-#[deriving(Show)]
+#[deriving(Show, Clone)]
 pub struct NodePt {
     pub id: Node, 
     pub x: f64,
