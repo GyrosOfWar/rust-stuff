@@ -1,4 +1,3 @@
-
 use edge::Edge;
 use nodept::{Node, NodePt};
 

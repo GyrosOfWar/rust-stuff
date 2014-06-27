@@ -1,6 +1,12 @@
+extern crate native;
 extern crate time;
 extern crate graphviz;
 extern crate getopts;
+extern crate rsfml;
+
+use rsfml::system::Vector2f;
+use rsfml::window::{ContextSettings, VideoMode, event, Close};
+use rsfml::graphics::{RenderWindow, CircleShape, Color};
 
 // TODO use terminal colors for nicer colored output
 //extern crate term;
@@ -9,12 +15,13 @@ use dot = graphviz;
 use getopts::{optopt, optflag, getopts, OptGroup, Matches};
 use std::io::File;
 use std::os::args;
-use std::rand::{SeedableRng, StdRng};
+use std::rand::{SeedableRng, StdRng, task_rng};
 use time::precise_time_ns;
 use std::from_str::FromStr;
 
 use graph::Graph;
 use population::Population;
+use nodept::NodePt;
 
 pub mod edge;
 pub mod graph;
@@ -51,7 +58,7 @@ fn parse_opt<T: FromStr>(matches: &Matches, opt: &str, default: T) -> T {
     }
 }
 
-fn main() {
+fn text_main() {
     let args: Vec<String> = args().iter().map(|x| x.to_string()).collect();
     let program = args.get(0).clone();
 
@@ -139,4 +146,79 @@ fn main() {
         println!("t_avg = {} ms, t_overall = {} s", dt / iter_count as f64, dt / 1000.0);
         println!("Improvement factor from first solution: {}", (first_result / best_result.total_weight))     
     }
+}
+
+fn make_node_circles(nodes: &Vec<NodePt>) -> Vec<CircleShape> {
+    let mut circles: Vec<CircleShape> = Vec::new();
+
+    for node in nodes.iter() {
+        let mut circle = match CircleShape::new() {
+            Some(c) => c,
+            None => fail!("Why would creating a circle fail?")
+        };
+
+        circle.set_radius(2.0);
+        circle.set_fill_color(&Color::red());
+        circle.set_position(&Vector2f::new(node.x as f32, node.y as f32));
+        circles.push(circle);
+    }
+
+    circles
+}
+
+fn sfml_main() {
+    let mut window = match RenderWindow::new(VideoMode::new_init(800, 800, 32), 
+                                             "TSP-GA visualizer", 
+                                             Close, 
+                                             &ContextSettings::default()) {
+        Some(window) => window,
+        None => fail!("Cannot create a new Render Window.")
+    };
+
+    // Create a CircleShape
+    // let mut circle = match CircleShape::new() {
+    //     Some(circle) => circle,
+    //     None       => fail!("Error, cannot create ball")
+    // };
+    // circle.set_radius(30.);
+    // circle.set_fill_color(&Color::red());
+    // circle.set_position(&Vector2f::new(100., 100.));
+    let scale = 800.0;
+    let node_count = 25;
+    let mut s_rng = task_rng();
+
+    let points = s_rng.gen_iter::<(f64, f64)>()
+        .enumerate()
+        .map(|(idx, (x, y))| NodePt::new(idx, x * scale, y * scale))
+        .take(node_count)
+        .collect();
+
+    let graph = Graph::from_nodes(points);
+    let circles = make_node_circles(&points);
+
+    while window.is_open() {
+        // Handle events
+        for event in window.events() {
+            match event {
+                event::Closed => window.close(),
+                _             => {/* do nothing */}
+            }
+        }
+
+        // Clear the window
+        window.clear(&Color::new_RGB(0, 200, 200));
+        // Draw the shape
+        //window.draw(&circle);
+        // Display things on screen
+        window.display()
+    }
+}
+
+fn main() {
+    sfml_main();
+}
+
+#[start]
+fn start(argc: int, argv: **u8) -> int {
+    native::start(argc, argv, main)
 }
