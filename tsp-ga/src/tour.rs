@@ -53,6 +53,7 @@ impl Tour {
         tour_weight += graph.get(*tour.get(0), *last);
         tour_weight
     }
+
     // Creates a random tour by taking a range of nodes [0..tour_len[
     // and shuffling it.
     pub fn random_tour<R: Rng>(rng: &mut R, graph: &Graph) -> Tour {
@@ -60,6 +61,13 @@ impl Tour {
         rng.shuffle(tour_nodes.as_mut_slice());
         let tour_weight = Tour::calc_tour_weight(&tour_nodes, graph);
         Tour::new(tour_nodes, tour_weight)
+    }
+
+    pub fn swap_nodes(&self, i: uint, j: uint, graph: &Graph) -> Tour {
+        let mut new_tour = self.nodes.clone();
+        new_tour.as_mut_slice().swap(i, j);
+        let weight = Tour::calc_tour_weight(&new_tour, graph);
+        Tour::new(new_tour, weight)
     }
 
     // Mutation works by looping over the tour and exchanging two

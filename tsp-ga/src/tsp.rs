@@ -4,25 +4,23 @@ extern crate graphviz;
 extern crate getopts;
 extern crate rsfml;
 
-use rsfml::system::Vector2f;
-use rsfml::window::{ContextSettings, VideoMode, event, Close};
-use rsfml::graphics::{RenderWindow, CircleShape, Color, VertexArray, Vertex, LinesStrip};
-
-// TODO use terminal colors for nicer colored output
-//extern crate term;
-
 use dot = graphviz;
 use getopts::{optopt, optflag, getopts, OptGroup, Matches};
+use rsfml::graphics::{RenderWindow, CircleShape, Color, VertexArray, Vertex, LinesStrip};
+use rsfml::system::Vector2f;
+use rsfml::window::{ContextSettings, VideoMode, event, Close};
+use std::collections::HashMap;
+use std::from_str::FromStr;
 use std::io::File;
 use std::os::args;
 use std::rand::{Rng, SeedableRng, StdRng, task_rng};
 use time::precise_time_ns;
-use std::from_str::FromStr;
-use std::collections::HashMap;
 
 use graph::Graph;
 use population::Population;
 use nodept::{NodePt, Node};
+use simulated_annealing::simulated_annealing;
+use tour::Tour;
 
 pub mod edge;
 pub mod graph;
@@ -30,6 +28,7 @@ pub mod nodept;
 pub mod population;
 pub mod tour;
 pub mod graphviz_conv;
+pub mod simulated_annealing;
 
 static DEFAULT_ITERS: uint = 800;
 static DEFAULT_MUT_RATE: f64 = 0.02;
@@ -189,25 +188,26 @@ fn sfml_main() {
         &settings).expect("Could not create a window!");
 
     let scale = 750.0;
-    let node_count = 25;
-    let berlin52 = Graph::from_file("testdata/berlin52.tsp", scale);
+    let node_count = 70;
+    let asdf = Graph::from_file("testdata/berlin52.tsp", scale);
 
-    let mut s_rng: StdRng = SeedableRng::from_seed(&[12, 13, 14, 15]);
-    let graph = Graph::random_graph(&mut s_rng, node_count, scale, scale);
-
-    let rng: StdRng = StdRng::new().ok().expect("Failed to acquire RNG!");
+    let mut rng: StdRng = StdRng::new().ok().expect("Failed to acquire RNG!");
+    let graph = Graph::random_graph(&mut rng, node_count, scale, scale);
     let mut pop = Population::new(250, graph.clone(), 0.03, 15, rng);
 
     // for _ in range(0u, 500) {
     //     pop = pop.evolve();
     // }
-    let mut k = 0;
+    let mut k = 1;
 
     let result = pop.fittest();
     println!("fittest = {} ", result);
     let mut result_positions = graph.tour_to_points(&result.nodes);
     let node_points: Vec<NodePt> = graph.get_node_points();
-    let (mut tour_vertices, mut node_circles) = draw_tour(&node_points, &result_positions);
+    let b = draw_tour(&node_points, &result_positions);
+    let mut tour_vertices = b.clone().val0();
+    let mut node_circles = b.clone().val1();
+
     while window.is_open() {
         // Handle events
         for event in window.events() {
@@ -217,15 +217,16 @@ fn sfml_main() {
             }
         }
 
-        if k % 500 == 0 {
-            for _ in range(0u, 500) {
+        if k % 100 == 0 {
+            for _ in range(0u, 150) {
                 pop = pop.evolve();
             }
             let result = pop.fittest();
             result_positions = graph.tour_to_points(&result.nodes);
             let b = draw_tour(&node_points, &result_positions);
-            tour_vertices = b.val0();
-            node_circles = b.val1();
+            tour_vertices = b.clone().val0();
+            node_circles = b.clone().val1();
+            println!("fittest = {}", result);
         }
 
         // Clear the window
@@ -243,7 +244,26 @@ fn sfml_main() {
 }
 
 fn main() {
-    sfml_main();
+    let scale = 750.0;
+    let node_count = 70;
+    let graph = Graph::from_file("testdata/berlin52.tsp", scale);
+
+    let mut rng: StdRng = StdRng::new().ok().expect("Failed to acquire RNG!");
+    //let graph = Graph::random_graph(&mut rng, node_count, scale, scale);
+
+    let init_solution = Tour::random_tour(&mut rng, &graph);
+    println!("initial solution = {}", init_solution.total_weight)
+    let sa_solution = simulated_annealing(&graph, 8000.0, init_solution, 0.999, &mut rng);
+    println!("sa_solution = {}", sa_solution.total_weight);
+    let mut pop = Population::new(250, graph.clone(), 0.03, 15, rng);
+
+    for _ in range(0u, 800) {
+        pop = pop.evolve();
+    }
+
+    println!("GA solution = {}", pop.fittest().total_weight)
+
+    //sfml_main();
 }
 
 #[start]
