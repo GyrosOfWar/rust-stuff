@@ -26,6 +26,7 @@ pub mod population;
 pub mod tour;
 pub mod graphviz_conv;
 pub mod simulated_annealing;
+pub mod branch_and_bound;
 
 static DEFAULT_ITERS: uint = 800;
 static DEFAULT_MUT_RATE: f64 = 0.02;
