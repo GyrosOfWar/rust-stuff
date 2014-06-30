@@ -158,7 +158,7 @@ fn make_node_circles(nodes: &Vec<NodePt>) -> Vec<CircleShape> {
             None => fail!("Why would creating a circle fail?")
         };
 
-        circle.set_radius(2.0);
+        circle.set_radius(4.0);
         circle.set_fill_color(&Color::red());
         circle.set_position(&Vector2f::new(node.x as f32, node.y as f32));
         circles.push(circle);
@@ -180,27 +180,30 @@ fn make_vertex_array(points: &Vec<NodePt>) -> VertexArray {
 }
 
 fn sfml_main() {
+    let settings =         
+        ContextSettings {
+            depth_bits : 0,
+            stencil_bits : 0,
+            antialiasing_level : 4,
+            major_version : 2,
+            minor_version : 0
+        };
+
     let mut window = 
         match RenderWindow::new
             (VideoMode::new_init(800, 800, 32), 
             "TSP-GA visualizer", 
             Close, 
-            &ContextSettings::default()) {
+            &settings) {
         Some(window) => window,
         None => fail!("Cannot create a new Render Window.")
     };
 
     let scale = 800.0;
-    let node_count = 25;
-    let mut s_rng: StdRng = SeedableRng::from_seed(&[12, 13, 14, 15]);
-    let tuples = s_rng.gen_iter::<(f64, f64)>();
-    let points: Vec<NodePt> = tuples.enumerate()
-        .map(|(idx, (x, y))| NodePt::new(idx, x * scale, y * scale))
-        .take(node_count)
-        .collect();
-
-    let graph = Graph::from_file("testdata/berlin52.tsp");
-    let circles = make_node_circles(&points);
+    let graph = Graph::from_file("testdata/berlin52.tsp");    
+    let graph_copy = graph.clone();
+    let node_points: Vec<NodePt> = graph.get_scaled_nodes(scale).values().map(|x| *x).collect();
+    let circles = make_node_circles(&node_points);
 
     let rng: StdRng = match StdRng::new() {
         Ok(r) => r,
@@ -209,18 +212,11 @@ fn sfml_main() {
     let mut pop = Population::new(250, box graph, 0.03, 15, rng);
 
     for _ in range(0, 500) {
-        pop.evolve();
+        pop = pop.evolve();
     }
 
     let result = pop.fittest();
-    println!("{}", result)
-    let mut nodeMap: HashMap<Node, NodePt> = HashMap::new();
-
-    for point in points.iter() {
-        nodeMap.insert(point.id, *point);
-    }
-
-    let result_positions: Vec<NodePt> = result.nodes.iter().map(|n| nodeMap.get(n).clone()).collect();
+    let result_positions = graph_copy.to_points(&result.nodes);
     let result_vertices: VertexArray = make_vertex_array(&result_positions);
 
     while window.is_open() {
@@ -242,7 +238,7 @@ fn sfml_main() {
         window.draw(&result_vertices);
 
         // Display things on screen
-        window.display()
+        window.display();
     }
 }
 

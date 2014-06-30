@@ -1,15 +1,18 @@
 use edge::Edge;
 use nodept::{Node, NodePt};
+use population::find_max;
 
 use std::rand::Rng;
 use std::io::BufferedReader;
 use std::io::File;
 use std::f64::INFINITY;
 use std::fmt;
+use std::collections::HashMap;
 
 #[deriving(Clone)]
 pub struct Graph {
     pub num_nodes: uint,
+    node_map: HashMap<Node, NodePt>,
     adj_matrix: Vec<f64>
 }
 
@@ -44,6 +47,7 @@ impl Graph {
         let num_nodes = nodes.len();
         let size = num_nodes * num_nodes;
         let mut matrix: Vec<f64> = Vec::with_capacity(size);
+        let mut node_map: HashMap<Node, NodePt> = HashMap::new();
         matrix.grow_set(size - 1, &INFINITY, INFINITY);
 
         for a in nodes.iter() {
@@ -62,8 +66,34 @@ impl Graph {
 
         Graph {
             adj_matrix: matrix, 
-            num_nodes: num_nodes
+            num_nodes: num_nodes,
+            node_map: node_map
         }
+    }
+
+    fn scale_to_range(x: f64, a: f64, b: f64, min: f64, max: f64) -> f64 {
+        (((b - a) * (x - min)) / (max - min)) + a
+    }
+
+    pub fn get_scaled_nodes(&self, max: f64) -> HashMap<Node, NodePt> {
+        let x_max = find_max(&self.node_map.values().map(|p| p.x).collect());
+        let y_max = find_max(&self.node_map.values().map(|p| p.y).collect());
+
+        let scaled: Vec<NodePt> = self.node_map
+            .values()
+            .map(|p| NodePt::new(
+                p.id, 
+                Graph::scale_to_range(p.x, 0.0, max, 0.0, x_max),
+                Graph::scale_to_range(p.y, 0.0, max, 0.0, y_max)))
+            .collect();
+
+        let mut map: HashMap<Node, NodePt> = HashMap::new();
+
+        for node in scaled.iter() {
+            map.insert(node.id, *node);
+        }
+
+        map
     }
 
     pub fn random_graph<R: Rng>(rng: &mut R, num_nodes: uint, x_max: f64, y_max: f64) -> Graph {
@@ -149,5 +179,15 @@ impl Graph {
             .collect();
 
         Graph::from_nodes(nodes)
+    }
+
+    pub fn to_points(&self, tour: &Vec<Node>) -> Vec<NodePt> {
+        let mut points: Vec<NodePt> = Vec::new();
+
+        for id in tour.iter() {
+            let node = self.node_map.get(id);
+            points.push(*node);
+        }
+        points
     }
 }

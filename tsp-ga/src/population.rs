@@ -77,7 +77,12 @@ impl fmt::Show for Population {
 }
 // Utility function for finding the minimum in a list of 
 // values that only implement PartialOrd and not Ord.
-fn find_min<E: PartialOrd+Clone>(xs: &Vec<E>) -> E {
+pub fn find_min<E: PartialOrd+Clone>(xs: &Vec<E>) -> E {
     let ref min = *xs.iter().fold(xs.get(0), |min, next| if next < min {next} else {min});
     min.clone()
+}
+
+pub fn find_max<E: PartialOrd+Clone>(xs: &Vec<E>) -> E {
+    let ref max = *xs.iter().fold(xs.get(0), |max, next| if next > max {next} else {max});
+    max.clone()
 }
