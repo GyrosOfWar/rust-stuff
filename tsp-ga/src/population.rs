@@ -4,6 +4,16 @@ use tour::Tour;
 use std::rand::{Rng, StdRng};
 use std::fmt;
 
+pub struct GeneticAlgorithm {
+    population: Population,
+    iterations: uint,
+    mutation_rate: f64,
+    population_size: uint,
+    tournament_size: uint
+}
+
+// todo impl TSPAlgorithm for GeneticAlgorithm
+
 pub struct Population {
     rng: StdRng,
     graph: Graph,

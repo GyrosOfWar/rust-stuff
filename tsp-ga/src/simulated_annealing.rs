@@ -1,7 +1,16 @@
 use graph::Graph;
 use nodept::{NodePt, Node};
-use std::rand::Rng;
+use std::rand::{Rng, StdRng};
 use tour::Tour;
+
+struct SimulatedAnnealing {
+	graph: Graph,
+	initial_temperature: f64,
+	cooling_rate: f64,
+	rng: StdRng
+}
+
+// TODO impl TSPAlgorithm for SimulatedAnnealing
 
 fn neighbor<R: Rng>(tour: &Tour, rng: &mut R, graph: &Graph) -> Tour {
 	let m = rng.gen_range::<uint>(0, tour.nodes.len());
@@ -13,9 +22,7 @@ fn acceptance_probability(solution_weight: f64, neighbor_weight: f64, temperatur
 	if neighbor_weight < solution_weight {
 		1.0
 	} else {
-		let p = ((solution_weight - neighbor_weight) / temperature).exp();
-		//println!("{}", p)
-		p
+		((solution_weight - neighbor_weight) / temperature).exp()
 	}
 }
 

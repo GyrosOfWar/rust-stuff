@@ -4,11 +4,8 @@ extern crate graphviz;
 extern crate getopts;
 extern crate rsfml;
 
-use dot = graphviz;
 use getopts::{optopt, optflag, getopts, OptGroup, Matches};
-use rsfml::graphics::{RenderWindow, CircleShape, Color, VertexArray, Vertex, LinesStrip};
-use rsfml::system::Vector2f;
-use rsfml::window::{ContextSettings, VideoMode, event, Close};
+
 use std::collections::HashMap;
 use std::from_str::FromStr;
 use std::io::File;
@@ -35,15 +32,6 @@ static DEFAULT_MUT_RATE: f64 = 0.02;
 static DEFAULT_POP_SIZE: uint = 200;
 static DEFAULT_TOURNAMENT_SIZE: uint = 15;
 
-fn write_to_file(graph: &Graph, file_name: &str) {
-    let mut f = File::create(&Path::new(file_name));
-    render_to(&mut f, graph);
-}
-
-pub fn render_to<W: Writer>(output: &mut W, graph: &Graph) {
-    dot::render(graph, output).unwrap()
-}
-
 fn usage(program: &str, opts: &[OptGroup]) {
     println!("Usage: {} [options]\n", program);
     for o in opts.iter() {
@@ -58,7 +46,11 @@ fn parse_opt<T: FromStr>(matches: &Matches, opt: &str, default: T) -> T {
     }
 }
 
-fn text_main() {
+trait TSPAlgorithm {
+    fn search(&self, graph: &Graph) -> Tour;
+}
+
+fn main() {
     let args: Vec<String> = args().iter().map(|x| x.to_string()).collect();
     let program = args.get(0).clone();
 
@@ -69,7 +61,9 @@ fn text_main() {
         optopt("p", "pop_size", "change the population size (default: 5000)", "POPSIZE"),
         optflag("v", "verbose", "print a lot of information, including timing."),
         optopt("r", "read", "read graph from a .tsp file", "READ"),
-        optopt("t", "tournament_size", "change the number of specimens used for tournament selection", "TSIZE")
+        optopt("t", "tournament_size", "change the number of specimens used for tournament selection", "TSIZE"),
+        optflag("g", "genetic_alg", "use the genetic algorithm (either -g or -s must be used)"),
+        optflag("s", "simulated_annealing", "use the simulated annealing algorith")
     ];
 
     let matches = match getopts(args.tail(), opts) {
@@ -81,8 +75,16 @@ fn text_main() {
         usage(program.as_slice(), opts);
         return;
     }
-    let v_flag = matches.opt_present("v");
 
+    // let tsp_algorithm = if matches.opt_present("s") {
+    //     SimulatedAnnealing 
+    // } else if matches.opt_present("g") {
+    //     GeneticAlgorithm
+    // } else {
+    //     fail!("Need to specify an algorithm!")
+    // };
+
+    let v_flag = matches.opt_present("v");
     let node_count = 15;
     let tournament_size = parse_opt::<uint>(&matches, "t", DEFAULT_TOURNAMENT_SIZE);
     let scale = 200.0;
@@ -116,11 +118,8 @@ fn text_main() {
         println!("\tTournament size = {}", tournament_size)
     }
 
-    // RNG for the GA
-    let rng: StdRng = match StdRng::new() {
-        Ok(r) => r,
-        Err(_) => fail!("failed to acquire RNG")
-    };
+    // RNG for the GA/SA algorithm
+    let rng: StdRng = StdRng::new().ok().expect("failed to acquire RNG");
 
     let mut pop = Population::new(population_size, graph, mutation_rate, tournament_size, rng);
     let first_result = pop.fittest().total_weight;
@@ -146,126 +145,4 @@ fn text_main() {
         println!("t_avg = {} ms, t_overall = {} s", dt / iter_count as f64, dt / 1000.0);
         println!("Improvement factor from first solution: {}", (first_result / best_result.total_weight))     
     }
-}
-
-fn draw_tour(nodes: &Vec<NodePt>, tour: &Vec<NodePt>) -> (VertexArray, Vec<CircleShape>) {
-    let mut node_circles: Vec<CircleShape> = Vec::new();
-    let mut vertex_array = VertexArray::new().expect("Failed to create VertexArray");
-    vertex_array.set_primitive_type(LinesStrip);
-
-    for node in nodes.iter() {
-        let mut circle = CircleShape::new().expect("Could not create CircleShape");
-        circle.set_radius(4.0);
-        circle.set_fill_color(&Color::red());
-        circle.set_position(&Vector2f::new((node.x as f32) - 4.0, (node.y as f32) - 4.0));
-        node_circles.push(circle)
-    }
-
-    for tour_node in tour.iter() {
-        let position = Vector2f::new(tour_node.x as f32, tour_node.y as f32);
-        vertex_array.append(&Vertex::new_with_pos_color(&position, &Color::black()));
-    }
-
-    let first = tour.get(0);
-    vertex_array.append(&Vertex::new_with_pos_color(&Vector2f::new(first.x as f32, first.y as f32), &Color::black()));
-    (vertex_array, node_circles)
-}
-
-fn sfml_main() {
-    let settings =         
-        ContextSettings {
-            depth_bits : 0,
-            stencil_bits : 0,
-            antialiasing_level : 4,
-            major_version : 2,
-            minor_version : 0
-        };
-
-    let mut window = RenderWindow::new
-        (VideoMode::new_init(800, 800, 32), 
-        "TSP-GA visualizer", 
-        Close, 
-        &settings).expect("Could not create a window!");
-
-    let scale = 750.0;
-    let node_count = 70;
-    let asdf = Graph::from_file("testdata/berlin52.tsp", scale);
-
-    let mut rng: StdRng = StdRng::new().ok().expect("Failed to acquire RNG!");
-    let graph = Graph::random_graph(&mut rng, node_count, scale, scale);
-    let mut pop = Population::new(250, graph.clone(), 0.03, 15, rng);
-
-    // for _ in range(0u, 500) {
-    //     pop = pop.evolve();
-    // }
-    let mut k = 1;
-
-    let result = pop.fittest();
-    println!("fittest = {} ", result);
-    let mut result_positions = graph.tour_to_points(&result.nodes);
-    let node_points: Vec<NodePt> = graph.get_node_points();
-    let b = draw_tour(&node_points, &result_positions);
-    let mut tour_vertices = b.clone().val0();
-    let mut node_circles = b.clone().val1();
-
-    while window.is_open() {
-        // Handle events
-        for event in window.events() {
-            match event {
-                event::Closed => window.close(),
-                _             => {/* do nothing */}
-            }
-        }
-
-        if k % 100 == 0 {
-            for _ in range(0u, 150) {
-                pop = pop.evolve();
-            }
-            let result = pop.fittest();
-            result_positions = graph.tour_to_points(&result.nodes);
-            let b = draw_tour(&node_points, &result_positions);
-            tour_vertices = b.clone().val0();
-            node_circles = b.clone().val1();
-            println!("fittest = {}", result);
-        }
-
-        // Clear the window
-        window.clear(&Color::new_RGB(255, 255, 255));
-
-        for circle in node_circles.iter() {
-            window.draw(circle);
-        }
-        window.draw(&tour_vertices);
-
-        // Display things on screen
-        window.display();
-        k += 1;
-    }
-}
-
-fn main() {
-    let scale = 750.0;
-    let node_count = 70;
-    let graph = Graph::from_file("testdata/berlin52.tsp", scale);
-
-    let mut rng: StdRng = StdRng::new().ok().expect("Failed to acquire RNG!");
-    //let graph = Graph::random_graph(&mut rng, node_count, scale, scale);
-
-    let init_solution = Tour::random_tour(&mut rng, &graph);
-    let sa_solution = simulated_annealing(&graph, 8000.0, init_solution, 0.999, &mut rng);
-    println!("sa_solution = {}", sa_solution);
-    let mut pop = Population::new(250, graph.clone(), 0.03, 15, rng);
-
-    for _ in range(0u, 800) {
-        pop = pop.evolve();
-    }
-
-    println!("GA solution = {}", pop.fittest())
-
-    //sfml_main();
-}
-
-#[start]
-fn start(argc: int, argv: *const *const u8) -> int {
-    native::start(argc, argv, main)
 }
