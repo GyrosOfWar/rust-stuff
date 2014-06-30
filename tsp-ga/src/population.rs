@@ -6,7 +6,7 @@ use std::fmt;
 
 pub struct Population {
     rng: StdRng,
-    graph: Box<Graph>,
+    graph: Graph,
     population: Vec<Tour>,
     mutation_rate: f64,
     tournament_size: uint
@@ -16,8 +16,8 @@ impl Population {
     // Creates a new population with a given size, on a given graph and with the given
     // GA parameters (mutation rate and tournament size).
     // The population is a list of tours, which are randomly generated.
-    pub fn new(population_count: uint, graph: Box<Graph>, mutation_rate: f64, tournament_size: uint, mut rng: StdRng) -> Population {
-        let population = Vec::from_fn(population_count, |_| Tour::random_tour(&mut rng, graph));
+    pub fn new(population_count: uint, graph: Graph, mutation_rate: f64, tournament_size: uint, mut rng: StdRng) -> Population {
+        let population = Vec::from_fn(population_count, |_| Tour::random_tour(&mut rng, &graph));
 
         Population {
             rng: rng,
@@ -54,11 +54,11 @@ impl Population {
         for _ in range(0, self.population.len()) {
             let parent1 = self.tournament_selection();
             let parent2 = self.tournament_selection();
-            let child: Tour = parent1.crossover(parent2, self.graph, &mut self.rng);
+            let child: Tour = parent1.crossover(parent2, &self.graph, &mut self.rng);
             new_population.push(child);
         }
 
-        let mutated = new_population.iter().map(|tour| tour.mutate(&mut self.rng, self.graph, self.mutation_rate)).collect();
+        let mutated = new_population.iter().map(|tour| tour.mutate(&mut self.rng, &self.graph, self.mutation_rate)).collect();
         //println!("{}\n", mutated)
         Population {
             rng: self.rng,

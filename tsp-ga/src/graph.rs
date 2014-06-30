@@ -12,7 +12,7 @@ use std::collections::HashMap;
 #[deriving(Clone)]
 pub struct Graph {
     pub num_nodes: uint,
-    node_map: HashMap<Node, NodePt>,
+    scaled_node_map: HashMap<Node, NodePt>,
     adj_matrix: Vec<f64>
 }
 
@@ -43,12 +43,15 @@ impl Graph {
         i + j * n_nodes
     }
 
-    pub fn from_nodes(nodes: Vec<NodePt>) -> Graph {
+    pub fn from_nodes(nodes: Vec<NodePt>, max: f64) -> Graph {
         let num_nodes = nodes.len();
         let size = num_nodes * num_nodes;
         let mut matrix: Vec<f64> = Vec::with_capacity(size);
         let mut node_map: HashMap<Node, NodePt> = HashMap::new();
         matrix.grow_set(size - 1, &INFINITY, INFINITY);
+
+        let mut x_max = -1.0;
+        let mut y_max = -1.0;
 
         for a in nodes.iter() {
             for b in nodes.iter() {
@@ -60,40 +63,27 @@ impl Graph {
                 } else {
                     *matrix.get_mut(offset) = a.distance_to(*b);
                 }
-
             }
+
+            x_max = if a.x > x_max { a.x } else { x_max };
+            y_max = if a.y > y_max { a.y } else { y_max };
+            node_map.insert(a.id, *a);
+        }
+
+        for (id, node) in node_map.mut_iter() {
+            node.x = Graph::scale_to_range(node.x, 0.0, max, 0.0, x_max);
+            node.y = Graph::scale_to_range(node.y, 0.0, max, 0.0, y_max);
         }
 
         Graph {
             adj_matrix: matrix, 
             num_nodes: num_nodes,
-            node_map: node_map
+            scaled_node_map: node_map
         }
     }
 
     fn scale_to_range(x: f64, a: f64, b: f64, min: f64, max: f64) -> f64 {
         (((b - a) * (x - min)) / (max - min)) + a
-    }
-
-    pub fn get_scaled_nodes(&self, max: f64) -> HashMap<Node, NodePt> {
-        let x_max = find_max(&self.node_map.values().map(|p| p.x).collect());
-        let y_max = find_max(&self.node_map.values().map(|p| p.y).collect());
-
-        let scaled: Vec<NodePt> = self.node_map
-            .values()
-            .map(|p| NodePt::new(
-                p.id, 
-                Graph::scale_to_range(p.x, 0.0, max, 0.0, x_max),
-                Graph::scale_to_range(p.y, 0.0, max, 0.0, y_max)))
-            .collect();
-
-        let mut map: HashMap<Node, NodePt> = HashMap::new();
-
-        for node in scaled.iter() {
-            map.insert(node.id, *node);
-        }
-
-        map
     }
 
     pub fn random_graph<R: Rng>(rng: &mut R, num_nodes: uint, x_max: f64, y_max: f64) -> Graph {
@@ -105,7 +95,7 @@ impl Graph {
             .take(num_nodes)
             .collect();
 
-        Graph::from_nodes(points)
+        Graph::from_nodes(points, x_max)
     }
 
     #[inline]
@@ -141,6 +131,10 @@ impl Graph {
         nodes
     }
 
+    pub fn get_node_points(&self) -> Vec<NodePt> {
+        self.scaled_node_map.values().map(|x| *x).collect()
+    }
+
     fn read_point(string: &str) -> Option<NodePt> {
         let mut end = string.len() - 1;
         if !string.ends_with("\n") {
@@ -164,7 +158,7 @@ impl Graph {
         
     }
 
-    pub fn from_file(file_path: &str) -> Graph {
+    pub fn from_file(file_path: &str, scale: f64) -> Graph {
         let path = Path::new(file_path);
         let mut file = BufferedReader::new(File::open(&path));
         let node_opts: Vec<Option<NodePt>> = file.lines()
@@ -178,14 +172,14 @@ impl Graph {
             .map(|y| y.unwrap())
             .collect();
 
-        Graph::from_nodes(nodes)
+        Graph::from_nodes(nodes, scale)
     }
 
-    pub fn to_points(&self, tour: &Vec<Node>) -> Vec<NodePt> {
+    pub fn tour_to_points(&self, tour: &Vec<Node>) -> Vec<NodePt> {
         let mut points: Vec<NodePt> = Vec::new();
 
         for id in tour.iter() {
-            let node = self.node_map.get(id);
+            let node = self.scaled_node_map.get(id);
             points.push(*node);
         }
         points

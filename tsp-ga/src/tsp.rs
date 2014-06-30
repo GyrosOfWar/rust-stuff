@@ -98,7 +98,7 @@ fn text_main() {
         if file_path.is_empty() {
             fail!("failed to parse file path")
         }
-        graph_opt = Some(Graph::from_file(file_path.as_slice()));
+        graph_opt = Some(Graph::from_file(file_path.as_slice(), 800.0));
     }
     else {    
         // make a seeded RNG for the random graph generation for consistent testing
@@ -123,7 +123,7 @@ fn text_main() {
         Err(_) => fail!("failed to acquire RNG")
     };
 
-    let mut pop = Population::new(population_size, box graph, mutation_rate, tournament_size, rng);
+    let mut pop = Population::new(population_size, graph, mutation_rate, tournament_size, rng);
     let first_result = pop.fittest().total_weight;
     let mut best_result = pop.fittest();
     if v_flag {
@@ -149,34 +149,27 @@ fn text_main() {
     }
 }
 
-fn make_node_circles(nodes: &Vec<NodePt>) -> Vec<CircleShape> {
-    let mut circles: Vec<CircleShape> = Vec::new();
-
-    for node in nodes.iter() {
-        let mut circle = match CircleShape::new() {
-            Some(c) => c,
-            None => fail!("Why would creating a circle fail?")
-        };
-
-        circle.set_radius(4.0);
-        circle.set_fill_color(&Color::red());
-        circle.set_position(&Vector2f::new(node.x as f32, node.y as f32));
-        circles.push(circle);
-    }
-
-    circles
-}
-
-fn make_vertex_array(points: &Vec<NodePt>) -> VertexArray {
-    let mut vertex_array = VertexArray::new().expect("Failed to create VA");
+fn draw_tour(nodes: &Vec<NodePt>, tour: &Vec<NodePt>) -> (VertexArray, Vec<CircleShape>) {
+    let mut node_circles: Vec<CircleShape> = Vec::new();
+    let mut vertex_array = VertexArray::new().expect("Failed to create VertexArray");
     vertex_array.set_primitive_type(LinesStrip);
 
-    for point in points.iter() {
-        let position = Vector2f::new(point.x as f32, point.y as f32);
+    for node in nodes.iter() {
+        let mut circle = CircleShape::new().expect("Could not create CircleShape");
+        circle.set_radius(4.0);
+        circle.set_fill_color(&Color::red());
+        circle.set_position(&Vector2f::new((node.x as f32) - 4.0, (node.y as f32) - 4.0));
+        node_circles.push(circle)
+    }
+
+    for tour_node in tour.iter() {
+        let position = Vector2f::new(tour_node.x as f32, tour_node.y as f32);
         vertex_array.append(&Vertex::new_with_pos_color(&position, &Color::black()));
     }
 
-    vertex_array
+    let first = tour.get(0);
+    vertex_array.append(&Vertex::new_with_pos_color(&Vector2f::new(first.x as f32, first.y as f32), &Color::black()));
+    (vertex_array, node_circles)
 }
 
 fn sfml_main() {
@@ -189,36 +182,26 @@ fn sfml_main() {
             minor_version : 0
         };
 
-    let mut window = 
-        match RenderWindow::new
-            (VideoMode::new_init(800, 800, 32), 
-            "TSP-GA visualizer", 
-            Close, 
-            &settings) {
-        Some(window) => window,
-        None => fail!("Cannot create a new Render Window.")
-    };
+    let mut window = RenderWindow::new
+        (VideoMode::new_init(800, 800, 32), 
+        "TSP-GA visualizer", 
+        Close, 
+        &settings).expect("Could not create a window!");
 
-    let scale = 800.0;
-    let graph = Graph::from_file("testdata/berlin52.tsp");    
-    let graph_copy = graph.clone();
-    let node_points: Vec<NodePt> = graph.get_scaled_nodes(scale).values().map(|x| *x).collect();
-    let circles = make_node_circles(&node_points);
+    let scale = 750.0;
+    let graph = Graph::from_file("testdata/berlin52.tsp", scale);
+    let rng: StdRng = StdRng::new().ok().expect("Failed to acquire RNG!");
+    let mut pop = Population::new(250, graph.clone(), 0.03, 15, rng);
 
-    let rng: StdRng = match StdRng::new() {
-        Ok(r) => r,
-        Err(_) => fail!("failed to acquire RNG")
-    };
-    let mut pop = Population::new(250, box graph, 0.03, 15, rng);
-
-    for _ in range(0, 500) {
+    for _ in range(0u, 500) {
         pop = pop.evolve();
     }
 
     let result = pop.fittest();
-    let result_positions = graph_copy.to_points(&result.nodes);
-    let result_vertices: VertexArray = make_vertex_array(&result_positions);
-
+    println!("fittest = {} ", result);
+    let result_positions = graph.tour_to_points(&result.nodes);
+    let node_points: Vec<NodePt> = graph.get_node_points();
+    let (tour_vertices, node_circles) = draw_tour(&node_points, &result_positions);
     while window.is_open() {
         // Handle events
         for event in window.events() {
@@ -230,12 +213,11 @@ fn sfml_main() {
 
         // Clear the window
         window.clear(&Color::new_RGB(255, 255, 255));
-        // Draw the shape
-        //window.draw(&circle);
-        for circle in circles.iter() {
+
+        for circle in node_circles.iter() {
             window.draw(circle);
         }
-        window.draw(&result_vertices);
+        window.draw(&tour_vertices);
 
         // Display things on screen
         window.display();
@@ -247,6 +229,6 @@ fn main() {
 }
 
 #[start]
-fn start(argc: int, argv: **u8) -> int {
+fn start(argc: int, argv: *const *const u8) -> int {
     native::start(argc, argv, main)
 }
