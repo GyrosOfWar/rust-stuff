@@ -252,16 +252,15 @@ fn main() {
     //let graph = Graph::random_graph(&mut rng, node_count, scale, scale);
 
     let init_solution = Tour::random_tour(&mut rng, &graph);
-    println!("initial solution = {}", init_solution.total_weight)
     let sa_solution = simulated_annealing(&graph, 8000.0, init_solution, 0.999, &mut rng);
-    println!("sa_solution = {}", sa_solution.total_weight);
+    println!("sa_solution = {}", sa_solution);
     let mut pop = Population::new(250, graph.clone(), 0.03, 15, rng);
 
     for _ in range(0u, 800) {
         pop = pop.evolve();
     }
 
-    println!("GA solution = {}", pop.fittest().total_weight)
+    println!("GA solution = {}", pop.fittest())
 
     //sfml_main();
 }

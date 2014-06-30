@@ -4,8 +4,8 @@ use std::rand::Rng;
 use tour::Tour;
 
 fn neighbor<R: Rng>(tour: &Tour, rng: &mut R, graph: &Graph) -> Tour {
-	let m = rng.gen_range::<uint>(0, tour.nodes.len() - 1);
-	let n = rng.gen_range::<uint>(0, tour.nodes.len() - 1);
+	let m = rng.gen_range::<uint>(0, tour.nodes.len());
+	let n = rng.gen_range::<uint>(0, tour.nodes.len());
 	tour.swap_nodes(n, m, graph)
 }
 
