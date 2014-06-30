@@ -189,19 +189,25 @@ fn sfml_main() {
         &settings).expect("Could not create a window!");
 
     let scale = 750.0;
-    let graph = Graph::from_file("testdata/berlin52.tsp", scale);
+    let node_count = 25;
+    let berlin52 = Graph::from_file("testdata/berlin52.tsp", scale);
+
+    let mut s_rng: StdRng = SeedableRng::from_seed(&[12, 13, 14, 15]);
+    let graph = Graph::random_graph(&mut s_rng, node_count, scale, scale);
+
     let rng: StdRng = StdRng::new().ok().expect("Failed to acquire RNG!");
     let mut pop = Population::new(250, graph.clone(), 0.03, 15, rng);
 
-    for _ in range(0u, 500) {
-        pop = pop.evolve();
-    }
+    // for _ in range(0u, 500) {
+    //     pop = pop.evolve();
+    // }
+    let mut k = 0;
 
     let result = pop.fittest();
     println!("fittest = {} ", result);
-    let result_positions = graph.tour_to_points(&result.nodes);
+    let mut result_positions = graph.tour_to_points(&result.nodes);
     let node_points: Vec<NodePt> = graph.get_node_points();
-    let (tour_vertices, node_circles) = draw_tour(&node_points, &result_positions);
+    let (mut tour_vertices, mut node_circles) = draw_tour(&node_points, &result_positions);
     while window.is_open() {
         // Handle events
         for event in window.events() {
@@ -209,6 +215,17 @@ fn sfml_main() {
                 event::Closed => window.close(),
                 _             => {/* do nothing */}
             }
+        }
+
+        if k % 500 == 0 {
+            for _ in range(0u, 500) {
+                pop = pop.evolve();
+            }
+            let result = pop.fittest();
+            result_positions = graph.tour_to_points(&result.nodes);
+            let b = draw_tour(&node_points, &result_positions);
+            tour_vertices = b.val0();
+            node_circles = b.val1();
         }
 
         // Clear the window
@@ -221,6 +238,7 @@ fn sfml_main() {
 
         // Display things on screen
         window.display();
+        k += 1;
     }
 }
 
