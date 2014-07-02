@@ -108,7 +108,7 @@ fn real_main() {
 
     let graph = graph_opt.unwrap();
 
-    let algorithm: Option<TSPAlgorithm> = None;
+    let mut algorithm: Option<Box<TSPAlgorithm>> = None;
     if matches.opt_present("g") {
         // TODO urgh
         let tournament_size = parse_opt::<uint>(&matches, "t", DEFAULT_GA_PARAMS.tournament_size);
@@ -122,41 +122,36 @@ fn real_main() {
             population_size: population_size
         };
 
-        algorithm = Some(GeneticAlgorithm(&mut rng, &graph, &params));
+        algorithm = Some(box GeneticAlgorithm::new(&mut rng, &graph, &params));
     }
 
-    if v_flag {
-        println!("Running TSP-GA on a graph with |N| = {}, |E| = {}", graph.num_nodes, graph.all_edges().len())
-        println!("GA parameters:")
-        println!("\tMutation rate = {}", mutation_rate)
-        println!("\tPopulation size = {}", population_size)
-        println!("\tNumber of iterations = {}", iter_count)
-        println!("\tTournament size = {}", tournament_size)
-    }
+    // if v_flag {
+    //     println!("Running TSP-GA on a graph with |N| = {}, |E| = {}", graph.num_nodes, graph.all_edges().len())
+    //     println!("GA parameters:")
+    //     println!("\tMutation rate = {}", mutation_rate)
+    //     println!("\tPopulation size = {}", population_size)
+    //     println!("\tNumber of iterations = {}", iter_count)
+    //     println!("\tTournament size = {}", tournament_size)
+    // }
 
-    let mut pop = Population::new(population_size, graph, mutation_rate, tournament_size, rng);
-    let first_result = pop.fittest().total_weight;
-    let mut best_result = pop.fittest();
-    if v_flag {
-        println!("Fittest at start: {}", first_result)
-    }
     // Evolve the population 
     let t0 = precise_time_ns();
-    for _ in range(0, iter_count) {
-        pop = pop.evolve();
-        let r = pop.fittest();
-        if r.total_weight < best_result.total_weight {
-            best_result = r;
-        }
-    }
+    // for _ in range(0, iter_count) {
+    //     pop = pop.evolve();
+    //     let r = pop.fittest();
+    //     if r.total_weight < best_result.total_weight {
+    //         best_result = r;
+    //     }
+    // }
+    let result = algorithm.unwrap().search(&graph, &mut rng);
     let t1 = precise_time_ns();
 
     // Show the end result and the time it took.
-    println!("Resulting tour: {}\nwith weight {}", best_result.nodes, best_result.total_weight)
+    println!("Resulting tour: {}\nwith weight {}", result.nodes, result.total_weight)
     if v_flag {
         let dt = ((t1-t0) as f64) / 1e6;
-        println!("t_avg = {} ms, t_overall = {} s", dt / iter_count as f64, dt / 1000.0);
-        println!("Improvement factor from first solution: {}", (first_result / best_result.total_weight))     
+        //println!("t_avg = {} ms, t_overall = {} s", dt / iter_count as f64, dt / 1000.0);
+        //println!("Improvement factor from first solution: {}", (first_result / result.total_weight))     
     }
 }
 
