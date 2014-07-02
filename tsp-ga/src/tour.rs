@@ -22,13 +22,14 @@ impl PartialEq for Tour {
 }
 
 impl PartialOrd for Tour {
-    fn lt(&self, other: &Tour) -> bool {
-        self.total_weight < other.total_weight
+    fn partial_cmp(&self, other: &Tour) -> Option<Ordering> {
+        self.total_weight.partial_cmp(&other.total_weight)
     }
 }
 
 impl Tour {
-    pub fn new(nodes: Vec<Node>, weight: f64) -> Tour {
+    pub fn new(nodes: Vec<Node>, graph: &Graph) -> Tour {
+        let weight = Tour::calc_tour_weight(&nodes, graph);
         Tour {
             nodes: nodes,
             total_weight: weight
@@ -59,15 +60,13 @@ impl Tour {
     pub fn random_tour<R: Rng>(rng: &mut R, graph: &Graph) -> Tour {
         let mut tour_nodes = graph.get_nodes();
         rng.shuffle(tour_nodes.as_mut_slice());
-        let tour_weight = Tour::calc_tour_weight(&tour_nodes, graph);
-        Tour::new(tour_nodes, tour_weight)
+        Tour::new(tour_nodes, graph)
     }
 
     pub fn swap_nodes(&self, i: uint, j: uint, graph: &Graph) -> Tour {
         let mut new_tour = self.nodes.clone();
         new_tour.as_mut_slice().swap(i, j);
-        let weight = Tour::calc_tour_weight(&new_tour, graph);
-        Tour::new(new_tour, weight)
+        Tour::new(new_tour, graph)
     }
 
     // Mutation works by looping over the tour and exchanging two
@@ -129,8 +128,7 @@ impl Tour {
                 }
             }
         }
-        let tour_weight = Tour::calc_tour_weight(&new_tour_2, graph);
-        Tour::new(new_tour_2, tour_weight)
+        Tour::new(new_tour_2, graph)
     }
 
     pub fn to_edges(&self, graph: &Graph) -> Vec<Edge> {

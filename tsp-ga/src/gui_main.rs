@@ -7,7 +7,6 @@ use std::from_str::FromStr;
 use std::io::File;
 use std::os::args;
 use std::rand::{Rng, SeedableRng, StdRng, task_rng};
-use time::precise_time_ns;
 use rsfml::graphics::{RenderWindow, CircleShape, Color, VertexArray, Vertex, LinesStrip};
 use rsfml::system::Vector2f;
 use rsfml::window::{ContextSettings, VideoMode, event, Close};
@@ -23,7 +22,6 @@ pub mod graph;
 pub mod nodept;
 pub mod population;
 pub mod tour;
-pub mod graphviz_conv;
 pub mod simulated_annealing;
 
 

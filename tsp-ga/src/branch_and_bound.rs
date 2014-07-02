@@ -3,25 +3,6 @@ use tour::Tour;
 use edge::Edge;
 use std::f64::INFINITY;
 
-struct UnionFind<'a> {
-	id: &'a [uint],
-	count: uint
-}
-
-impl<'a> UnionFind<'a> {
-	fn new<'a>(length: uint) -> UnionFind<'a> {
-		unimplemented!()
-	}
-
-	fn union(&mut self, p: uint, q: uint) {
-		unimplemented!()
-	}
-
-	fn connected(&self, p: uint, q: uint) -> bool {
-		unimplemented!()
-	}
-}
-
 struct Problem<'a> {
 	graph: &'a Graph,
 	included_edges: Vec<Edge>,
@@ -31,7 +12,12 @@ struct Problem<'a> {
 
 impl<'a> Problem<'a> {
 	fn new<'a>(graph: &'a Graph) -> Problem<'a> {
-		unimplemented!()
+		Problem {
+			graph: graph,
+			included_edges: Vec::new(),
+			excluded_edges: Vec::new(),
+			lower_bound: -1.0
+		}
 	}
 }
 
