@@ -35,13 +35,33 @@ static DEFAULT_GA_PARAMS: GAParameterSet = GAParameterSet {
     tournament_size: 15
 };
 
+fn parse_algorithm<A: TSPAlgorithm, R: Rng>(matches: &Matches, rng: &mut R, graph: &Graph) -> Option<Box<A>> {
+    if matches.opt_present("g") {
+        let params = GAParameterSet {
+            tournament_size:
+                parse_opt::<uint>(matches, "t", DEFAULT_GA_PARAMS.tournament_size),
+            mutation_rate:
+                parse_opt::<f64>(matches, "m", DEFAULT_GA_PARAMS.mutation_rate),
+            iterations:
+                parse_opt::<uint>(matches, "i", DEFAULT_GA_PARAMS.iterations),
+            population_size:
+                parse_opt::<uint>(matches, "p", DEFAULT_GA_PARAMS.population_size)
+        };
+        let alg = GeneticAlgorithm::new(rng, graph, &params);
+        Some(box alg)
+    }
+    else {
+        None
+    }
+}
+
 fn usage(program: &str, opts: &[OptGroup]) {
     println!("Usage: {} [options]\n", program);
     for o in opts.iter() {
         println!("-{}\t--{}: {}", o.short_name, o.long_name, o.desc);
     }
 }
-
+// TODO use Matches.opt_default for this
 fn parse_opt<T: FromStr>(matches: &Matches, opt: &str, default: T) -> T {
     match matches.opt_str(opt) {
         Some(o) => from_str::<T>(o.as_slice()).unwrap_or(default),
@@ -52,9 +72,9 @@ fn parse_opt<T: FromStr>(matches: &Matches, opt: &str, default: T) -> T {
 fn real_main() {
     let args: Vec<String> = args().iter().map(|x| x.to_string()).collect();
     let program = args.get(0).clone();
-
+    // TODO adjust options for simulated annealing/branch and bound and stuff
     let opts = [
-        optflag("h", "help", "print this help menu"), 
+        optflag("h", "help", "print this help menu"),
         optopt("m", "mutation_rate", "change the mutation rate (default: 0.015)", "MUTRATE"),
         optopt("i", "iters", "change the number of GA iterations (default: 50)", "ITERS"),
         optopt("p", "pop_size", "change the population size (default: 5000)", "POPSIZE"),
@@ -84,7 +104,7 @@ fn real_main() {
     let rng: StdRng = StdRng::new().ok().expect("failed to acquire RNG");
 
     // let tsp_algorithm = if matches.opt_present("s") {
-    //     SimulatedAnnealing 
+    //     SimulatedAnnealing
     // } else if matches.opt_present("g") {
     //     GeneticAlgorithm
     // } else {
@@ -100,7 +120,7 @@ fn real_main() {
         }
         graph_opt = Some(Graph::from_file(file_path.as_slice(), 800.0));
     }
-    else {    
+    else {
         // make a seeded RNG for the random graph generation for consistent testing
         let mut s_rng: StdRng = SeedableRng::from_seed(&[12, 13, 14, 15]);
         graph_opt = Some(Graph::random_graph(&mut s_rng, node_count, scale, scale))
@@ -108,22 +128,7 @@ fn real_main() {
 
     let graph = graph_opt.unwrap();
 
-    let mut algorithm: Option<Box<TSPAlgorithm>> = None;
-    if matches.opt_present("g") {
-        // TODO urgh
-        let tournament_size = parse_opt::<uint>(&matches, "t", DEFAULT_GA_PARAMS.tournament_size);
-        let mutation_rate = parse_opt::<f64>(&matches, "m", DEFAULT_GA_PARAMS.mutation_rate);
-        let iterations = parse_opt::<uint>(&matches, "i", DEFAULT_GA_PARAMS.iterations);
-        let population_size = parse_opt::<uint>(&matches, "p", DEFAULT_GA_PARAMS.population_size);
-        let params = GAParameterSet {
-            tournament_size: tournament_size,
-            mutation_rate: mutation_rate,
-            iterations: iterations,
-            population_size: population_size
-        };
-
-        algorithm = Some(box GeneticAlgorithm::new(&mut rng, &graph, &params));
-    }
+    let algorithm = parse_algorithm(&matches, &mut rng, &graph);
 
     // if v_flag {
     //     println!("Running TSP-GA on a graph with |N| = {}, |E| = {}", graph.num_nodes, graph.all_edges().len())
@@ -134,7 +139,7 @@ fn real_main() {
     //     println!("\tTournament size = {}", tournament_size)
     // }
 
-    // Evolve the population 
+    // Evolve the population
     let t0 = precise_time_ns();
     // for _ in range(0, iter_count) {
     //     pop = pop.evolve();
@@ -151,7 +156,7 @@ fn real_main() {
     if v_flag {
         let dt = ((t1-t0) as f64) / 1e6;
         //println!("t_avg = {} ms, t_overall = {} s", dt / iter_count as f64, dt / 1000.0);
-        //println!("Improvement factor from first solution: {}", (first_result / result.total_weight))     
+        //println!("Improvement factor from first solution: {}", (first_result / result.total_weight))
     }
 }
 
