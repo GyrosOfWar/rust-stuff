@@ -1,7 +1,7 @@
 extern crate graphviz;
 
 use graphviz::maybe_owned_vec::IntoMaybeOwnedVector;
-use dot = graphviz;
+use graphviz as dot;
 
 use edge::Edge;
 use graph::Graph;

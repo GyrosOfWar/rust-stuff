@@ -5,7 +5,7 @@ extern crate getopts;
 // TODO use terminal colors for nicer colored output
 //extern crate term;
 
-use dot = graphviz;
+use graphviz as dot;
 use getopts::{optopt, optflag, getopts, OptGroup, Matches};
 use std::io::File;
 use std::os::args;
@@ -53,7 +53,7 @@ fn parse_opt<T: FromStr>(matches: &Matches, opt: &str, default: T) -> T {
 
 fn main() {
     let args: Vec<String> = args().iter().map(|x| x.to_string()).collect();
-    let program = args.get(0).clone();
+    let program = args[0].clone();
 
     let opts = [
         optflag("h", "help", "print this help menu"), 
@@ -67,7 +67,7 @@ fn main() {
 
     let matches = match getopts(args.tail(), opts) {
         Ok(m) => m,
-        Err(f) => fail!(f.to_str())
+        Err(_) => fail!("Failed matching options")
     };
 
     if matches.opt_present("h") {
@@ -83,7 +83,7 @@ fn main() {
     let iter_count = parse_opt::<uint>(&matches, "i", DEFAULT_ITERS);
     let population_size = parse_opt::<uint>(&matches, "p", DEFAULT_POP_SIZE);
 
-    let mut graph_opt: Option<Graph> = None;
+    let mut graph_opt: Option<Graph>;
 
     if matches.opt_present("r") {
         let file_path = parse_opt::<String>(&matches, "r", String::new());
@@ -94,7 +94,8 @@ fn main() {
     }
     else {    
         // make a seeded RNG for the random graph generation for consistent testing
-        let mut s_rng: StdRng = SeedableRng::from_seed(&[12, 13, 14, 15]);
+        let seed: &[_] = &[12, 13, 14, 15];
+        let mut s_rng: StdRng = SeedableRng::from_seed(seed);
         graph_opt = Some(Graph::random_graph(&mut s_rng, node_count, scale, scale))
     }
 

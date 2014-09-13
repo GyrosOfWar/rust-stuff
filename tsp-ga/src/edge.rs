@@ -38,8 +38,8 @@ impl PartialEq for Edge {
 impl Eq for Edge {}
 
 impl PartialOrd for Edge {
-    fn lt(&self, other: &Edge) -> bool {
-        self.weight < other.weight
+    fn partial_cmp(&self, other: &Edge) -> Option<Ordering> {
+        self.weight.partial_cmp(&other.weight)
     }
 }
 

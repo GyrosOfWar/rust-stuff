@@ -22,8 +22,8 @@ impl PartialEq for Tour {
 }
 
 impl PartialOrd for Tour {
-    fn lt(&self, other: &Tour) -> bool {
-        self.total_weight < other.total_weight
+    fn partial_cmp(&self, other: &Tour) -> Option<Ordering> {
+        self.total_weight.partial_cmp(&other.total_weight)
     }
 }
 
@@ -38,10 +38,10 @@ impl Tour {
     // between the nodes.
     pub fn calc_tour_weight(tour: &Vec<Node>, graph: &Graph) -> f64 {
         let mut tour_weight = 0.0;
-        let mut last_node = *tour.get(0u);
+        let mut last_node = tour[0];
 
         for idx in range(1, tour.len()) {
-            let node = *tour.get(idx);
+            let node = tour[idx];
             let x = graph.get(last_node, node);
             tour_weight += x;
             last_node = node;
@@ -50,7 +50,7 @@ impl Tour {
             Some(l) => l,
             None => fail!("Empty tour!")
         };
-        tour_weight += graph.get(*tour.get(0), *last);
+        tour_weight += graph.get(tour[0], *last);
         tour_weight
     }
     // Creates a random tour by taking a range of nodes [0..tour_len[
@@ -101,7 +101,7 @@ impl Tour {
 
         let new_tour = Vec::from_fn(size, |i| {
             if i >= start && i <= end {
-                Some(*self.nodes.get(i))
+                Some(self.nodes[0])
             } else {
                 None
             }
@@ -113,7 +113,7 @@ impl Tour {
             match *node {
                 Some(n) => new_tour_2.push(n),
                 None => { 
-                    let v = Some(*other.nodes.get(i));
+                    let v = Some(other.nodes[i]);
                     if !new_tour.contains(&v) {
                         new_tour_2.push(v.unwrap());
                     }
@@ -127,10 +127,10 @@ impl Tour {
 
     pub fn to_edges(&self, graph: &Graph) -> Vec<Edge> {
         let mut edges: Vec<Edge> = Vec::new();
-        let mut last_node = self.nodes.get(0);
+        let mut last_node = self.nodes[0];
         for i in range(1, self.nodes.len()) {
-            let next_node = self.nodes.get(i);
-            let edge = graph.get_edge(*last_node, *next_node);
+            let next_node = self.nodes[i];
+            let edge = graph.get_edge(last_node,next_node);
             edges.push(edge);
             last_node = next_node;
         }

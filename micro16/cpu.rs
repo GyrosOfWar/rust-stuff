@@ -1,7 +1,7 @@
 use std::io::File;
 
-static MEMORY_SIZE: int = 1 << 16;
-static PROGRAM_LENGTH: int = 256;
+static MEMORY_SIZE: uint = 1 << 16;
+static PROGRAM_LENGTH: uint = 256;
 
 enum AluModes {
 	AluNoOp = 0,
@@ -36,7 +36,7 @@ impl Cpu {
 		Cpu { registers: RegisterSet::new(),
 			  memory: Memory::new(), 
 			  program: prog,
-			  program_counter: 0,
+			  program_counter: 0u8,
 			  zeroFlag: false,
 			  negativeFlag: false }
 	}
@@ -101,7 +101,10 @@ struct Memory {
 
 impl Memory {
 	fn new() -> Memory {
-		Memory { data: [0i16, ..MEMORY_SIZE], ready: false }
+		Memory { 
+			data: [0i16, ..MEMORY_SIZE], 
+			ready: false 
+		}
 	}
 
 	fn read(&mut self, idx: uint) -> Option<i16> {
@@ -116,7 +119,7 @@ impl Memory {
 		}
 	}
 
-	fn write (&mut self, idx: uint, value: i16) -> bool {
+	fn write(&mut self, idx: uint, value: i16) -> bool {
 		if !self.ready {
 			self.ready = true;
 			false

@@ -8,9 +8,9 @@ pub struct NodePt {
 }
 
 impl NodePt {
-    pub fn new(nodeId: Node, x: f64, y: f64) -> NodePt {
+    pub fn new(node_id: Node, x: f64, y: f64) -> NodePt {
         NodePt {
-            id: nodeId,
+            id: node_id,
             x: x,
             y: y
         }

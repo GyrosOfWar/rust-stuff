@@ -1,4 +1,3 @@
-
 use edge::Edge;
 use nodept::{Node, NodePt};
 
@@ -25,7 +24,7 @@ impl fmt::Show for Graph {
                     s.push_str("∞\t");
                 }
                 else {
-                    s.push_str(w.to_str().append("\t").as_slice());
+                    s.push_str(w.to_string().append("\t").as_slice());
                 }
             }
             s.push_str("\n");
@@ -49,10 +48,10 @@ impl Graph {
 
         for a in nodes.iter() {
             for b in nodes.iter() {
-                let aId = a.id;
-                let bId = b.id;
-                let offset = Graph::offset(aId, bId, num_nodes);
-                if aId == bId {
+                let a_id = a.id;
+                let b_id = b.id;
+                let offset = Graph::offset(a_id, b_id, num_nodes);
+                if a_id == b_id {
                     *matrix.get_mut(offset) = INFINITY;
                 } else {
                     *matrix.get_mut(offset) = a.distance_to(*b);
@@ -82,7 +81,7 @@ impl Graph {
     #[inline]
     pub fn get(&self, n: Node, m: Node) -> f64 {
         let offset = Graph::offset(n, m, self.num_nodes);
-        let weight = *self.adj_matrix.get(offset);
+        let weight = self.adj_matrix[offset];
         weight
     }
 
@@ -126,7 +125,7 @@ impl Graph {
             .map(|o| o.unwrap())
             .collect();
         if numbers.len() >= 3 {
-            let result = NodePt::new((*numbers.get(0) as uint) - 1, *numbers.get(1), *numbers.get(2));
+            let result = NodePt::new(numbers[0] as uint - 1, numbers[1], numbers[2]);
             Some(result)
         }
         else {  
