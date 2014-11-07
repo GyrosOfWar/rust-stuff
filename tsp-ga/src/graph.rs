@@ -24,7 +24,8 @@ impl fmt::Show for Graph {
                     s.push_str("∞\t");
                 }
                 else {
-                    s.push_str(w.to_string().append("\t").as_slice());
+                    s.push_str(format!("{}\t", w).as_slice());
+                    //s.push_str(w.to_string().append("\t").as_slice());
                 }
             }
             s.push_str("\n");
@@ -43,9 +44,9 @@ impl Graph {
     pub fn from_nodes(nodes: Vec<NodePt>) -> Graph {
         let num_nodes = nodes.len();
         let size = num_nodes * num_nodes;
-        let mut matrix: Vec<f64> = Vec::with_capacity(size);
-        matrix.grow_set(size - 1, &INFINITY, INFINITY);
-
+        //let mut matrix: Vec<f64> = Vec::with_capacity(size);
+        //matrix.grow_set(size - 1, &INFINITY, INFINITY);
+        let mut matrix: Vec<f64> = Vec::from_elem(size, INFINITY);
         for a in nodes.iter() {
             for b in nodes.iter() {
                 let a_id = a.id;
@@ -140,7 +141,7 @@ impl Graph {
         let node_opts: Vec<Option<NodePt>> = file.lines()
             .map(|r| match r {
                 Ok(string) => Graph::read_point(string.as_slice()),
-                Err(_) => fail!("failed to read")
+                Err(_) => panic!("failed to read")
             })
             .collect();
         let nodes = node_opts.iter()

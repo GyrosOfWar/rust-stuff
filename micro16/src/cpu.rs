@@ -1,7 +1,7 @@
 use std::io::File;
 
-static MEMORY_SIZE: uint = 1 << 16;
-static PROGRAM_LENGTH: uint = 256;
+const MEMORY_SIZE: uint = 1 << 16;
+const PROGRAM_LENGTH: uint = 256;
 
 enum AluModes {
 	AluNoOp = 0,
@@ -27,8 +27,8 @@ struct Cpu {
     memory: Memory,
     program: [i32, ..PROGRAM_LENGTH],
     program_counter: u8,
-    negativeFlag: bool,
-    zeroFlag: bool
+    negative_flag: bool,
+    zero_flag: bool
 }
 
 impl Cpu {
@@ -37,16 +37,17 @@ impl Cpu {
 			  memory: Memory::new(), 
 			  program: prog,
 			  program_counter: 0u8,
-			  zeroFlag: false,
-			  negativeFlag: false }
+			  zero_flag: false,
+			  negative_flag: false }
 	}
 
 	fn step(&mut self) {
-		self.negativeFlag = false;
-		self.zeroFlag = false;
+		self.negative_flag = false;
+		self.zero_flag = false;
 
 		let nextInstuction = self.program[self.program_counter as uint];
 		self.program_counter += 1;
+
 
 		
 	}
@@ -55,7 +56,7 @@ impl Cpu {
 struct RegisterSet {
 	zero: i16,
 	one: i16,
-	minusOne: i16,
+	minus_one: i16,
 	r0: i16,
 	r1: i16,
 	r2: i16,
@@ -76,7 +77,7 @@ impl RegisterSet {
 		RegisterSet {
 			zero: 0,
 			one: 1,
-			minusOne: -1,
+			minus_one: -1,
 			r0: 0,
 			r1: 0,
 			r2: 0,
@@ -133,7 +134,7 @@ impl Memory {
 	}
 }
 
-fn main() {
-	let reg = RegisterSet::new();
-	println!("{}", reg.zero);
-}
+
+
+
+

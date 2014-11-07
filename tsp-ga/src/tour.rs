@@ -21,9 +21,20 @@ impl PartialEq for Tour {
     }
 }
 
+impl Eq for Tour {}
+
 impl PartialOrd for Tour {
     fn partial_cmp(&self, other: &Tour) -> Option<Ordering> {
         self.total_weight.partial_cmp(&other.total_weight)
+    }
+}
+
+impl Ord for Tour {
+    fn cmp(&self, other: &Tour) -> Ordering {
+      match self.total_weight.partial_cmp(&other.total_weight) {
+          Some(ord) => ord,
+          None => Greater
+      }
     }
 }
 
@@ -48,7 +59,7 @@ impl Tour {
         }
         let last = match tour.last() {
             Some(l) => l,
-            None => fail!("Empty tour!")
+            None => panic!("Empty tour!")
         };
         tour_weight += graph.get(tour[0], *last);
         tour_weight

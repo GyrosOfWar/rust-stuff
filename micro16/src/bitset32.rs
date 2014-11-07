@@ -1,17 +1,17 @@
-struct BitSet32 {
+pub struct BitSet32 {
     val: u32
 }
 
 impl BitSet32 {
-	fn new(v: u32) -> BitSet32 {
+	pub fn new(v: u32) -> BitSet32 {
 		BitSet32 {val: v}
 	}
 
-	fn get(&self, i: uint) -> bool {
+	pub fn get(&self, i: uint) -> bool {
 		(self.val & (1 << i)) != 0
 	}
-
-	fn get_many(&self, start: uint, end: uint) -> u32 {
+ 
+	pub fn get_many(&self, start: uint, end: uint) -> u32 {
         let mut mask = 0;
         for i in range(start, end) {
         	mask |= 1 << i;
@@ -19,15 +19,15 @@ impl BitSet32 {
         (self.val & mask) >> start
 	}
 
-	fn and(&self, other: BitSet32) -> BitSet32 {
+	pub fn and(&self, other: BitSet32) -> BitSet32 {
 		BitSet32 {val: self.val & other.val}
 	}
 
-	fn or(&self, other: BitSet32) -> BitSet32 {
+	pub fn or(&self, other: BitSet32) -> BitSet32 {
 		BitSet32 {val: self.val | other.val}
 	}
 
-	fn xor(&self, other: BitSet32) -> BitSet32 {
+	pub fn xor(&self, other: BitSet32) -> BitSet32 {
 		BitSet32 {val: self.val ^ other.val}
 	}
 }

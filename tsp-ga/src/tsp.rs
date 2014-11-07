@@ -67,7 +67,7 @@ fn main() {
 
     let matches = match getopts(args.tail(), opts) {
         Ok(m) => m,
-        Err(_) => fail!("Failed matching options")
+        Err(_) => panic!("Failed matching options")
     };
 
     if matches.opt_present("h") {
@@ -88,7 +88,7 @@ fn main() {
     if matches.opt_present("r") {
         let file_path = parse_opt::<String>(&matches, "r", String::new());
         if file_path.is_empty() {
-            fail!("failed to parse file path")
+            panic!("failed to parse file path")
         }
         graph_opt = Some(Graph::from_file(file_path.as_slice()));
     }
@@ -113,7 +113,7 @@ fn main() {
     // RNG for the GA
     let rng: StdRng = match StdRng::new() {
         Ok(r) => r,
-        Err(_) => fail!("failed to acquire RNG")
+        Err(_) => panic!("failed to acquire RNG")
     };
 
     let mut pop = Population::new(population_size, box graph, mutation_rate, tournament_size, rng);

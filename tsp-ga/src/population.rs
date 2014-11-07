@@ -30,7 +30,8 @@ impl Population {
 
     // Returns the fittest (lowest weighted) tour in the population. 
     pub fn fittest(&self) -> Tour {
-        find_min(&self.population)
+        //find_min(&self.population)
+        self.population.iter().min().unwrap().clone()
     }
 
     // Selects (self.tournament.size) tours randomly from the population
@@ -42,7 +43,8 @@ impl Population {
             let t = (self.rng.gen::<f64>() * (size as f64)) as uint;
             buffer.push(self.population[t].clone());
         }
-        find_min(&buffer)
+        buffer.iter().min().unwrap().clone()
+        //find_min(&buffer)
     }
     // Creates a new population based on the current one
     // by taking two parents with a tournament selection,
@@ -74,10 +76,4 @@ impl fmt::Show for Population {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "Population: {}", self.population)
     }
-}
-// Utility function for finding the minimum in a list of 
-// values that only implement PartialOrd and not Ord.
-fn find_min<E: PartialOrd+Clone>(xs: &Vec<E>) -> E {
-    let ref min = *xs.iter().fold(xs.get(0), |min, next| if next < min {next} else {min});
-    min.clone()
 }
