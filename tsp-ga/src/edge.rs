@@ -1,4 +1,6 @@
 use nodept::{Node, NodePt};
+use std::cmp::Ordering;
+use std::cmp::Ordering::{Less, Equal, Greater};
 
 #[deriving(Show, Clone)]
 pub struct Edge {

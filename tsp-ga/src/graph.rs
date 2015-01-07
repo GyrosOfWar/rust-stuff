@@ -5,7 +5,10 @@ use std::rand::Rng;
 use std::io::BufferedReader;
 use std::io::File;
 use std::f64::INFINITY;
+use std::f64;
 use std::fmt;
+use std::iter::repeat;
+use std::str::FromStr;
 
 #[deriving(Clone)]
 pub struct Graph {
@@ -46,7 +49,7 @@ impl Graph {
         let size = num_nodes * num_nodes;
         //let mut matrix: Vec<f64> = Vec::with_capacity(size);
         //matrix.grow_set(size - 1, &INFINITY, INFINITY);
-        let mut matrix: Vec<f64> = Vec::from_elem(size, INFINITY);
+        let mut matrix: Vec<f64> = repeat(INFINITY).take(size).collect();
         for a in nodes.iter() {
             for b in nodes.iter() {
                 let a_id = a.id;
@@ -121,7 +124,7 @@ impl Graph {
         let numbers: Vec<f64> = string
             .slice_to(end)
             .split(' ')
-            .map(|x| from_str::<f64>(x))
+            .map(|x| f64::from_str(x))
             .filter(|f| f.is_some())
             .map(|o| o.unwrap())
             .collect();

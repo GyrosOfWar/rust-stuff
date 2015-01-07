@@ -1,0 +1,11 @@
+[package]
+
+name = "tsp-ga"
+version = "0.0.1"
+authors = ["webtest"]
+
+[[bin]]
+name = "tsp"
+
+[dependencies]
+time = "*"

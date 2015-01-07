@@ -11,7 +11,7 @@ use std::io::File;
 use std::os::args;
 use std::rand::{SeedableRng, StdRng};
 use time::precise_time_ns;
-use std::from_str::FromStr;
+use std::str::FromStr;
 
 use graph::Graph;
 use population::Population;
@@ -100,16 +100,16 @@ fn main() {
     }
 
     let graph = graph_opt.unwrap();
-
+/*
     if v_flag {
-        println!("Running TSP-GA on a graph with |N| = {}, |E| = {}", graph.num_nodes, graph.all_edges().len())
-        println!("GA parameters:")
-        println!("\tMutation rate = {}", mutation_rate)
-        println!("\tPopulation size = {}", population_size)
-        println!("\tNumber of iterations = {}", iter_count)
-        println!("\tTournament size = {}", tournament_size)
+        println!("Running TSP-GA on a graph with |N| = {}, |E| = {}", graph.num_nodes, graph.all_edges().len());
+        println!("GA parameters:");
+        println!("\tMutation rate = {}", mutation_rate);
+        println!("\tPopulation size = {}", population_size);
+        println!("\tNumber of iterations = {}", iter_count);
+        println!("\tTournament size = {}", tournament_size);
     }
-
+*/
     // RNG for the GA
     let rng: StdRng = match StdRng::new() {
         Ok(r) => r,
@@ -134,10 +134,10 @@ fn main() {
     let t1 = precise_time_ns();
 
     // Show the end result and the time it took.
-    println!("Resulting tour: {}\nwith weight {}", best_result.nodes, best_result.total_weight)
+    println!("Resulting tour: {}\nwith weight {}", best_result.nodes, best_result.total_weight);
     if v_flag {
         let dt = ((t1-t0) as f64) / 1e6;
         println!("t_avg = {} ms, t_overall = {} s", dt / iter_count as f64, dt / 1000.0);
-        println!("Improvement factor from first solution: {}", (first_result / best_result.total_weight))     
+        println!("Improvement factor from first solution: {}", (first_result / best_result.total_weight));
     }
 }
