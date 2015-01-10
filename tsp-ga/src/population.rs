@@ -17,8 +17,8 @@ impl Population {
     // GA parameters (mutation rate and tournament size).
     // The population is a list of tours, which are randomly generated.
     pub fn new(population_count: uint, graph: Box<Graph>, mutation_rate: f64, tournament_size: uint, mut rng: StdRng) -> Population {
-        let population = Vec::from_fn(population_count, |_| Tour::random_tour(&mut rng, &*graph));
-
+        //let population = Vec::from_fn(population_count, |_| Tour::random_tour(&mut rng, &*graph));
+        let population = (0..population_count).map(|_| Tour::random_tour(&mut rng, &*graph)).collect::<Vec<_>>();
         Population {
             rng: rng,
             graph: graph,
@@ -30,7 +30,6 @@ impl Population {
 
     // Returns the fittest (lowest weighted) tour in the population. 
     pub fn fittest(&self) -> Tour {
-        //find_min(&self.population)
         self.population.iter().min().unwrap().clone()
     }
 
@@ -44,7 +43,7 @@ impl Population {
             buffer.push(self.population[t].clone());
         }
         buffer.iter().min().unwrap().clone()
-        //find_min(&buffer)
+
     }
     // Creates a new population based on the current one
     // by taking two parents with a tournament selection,
@@ -74,6 +73,6 @@ impl Population {
 
 impl fmt::Show for Population {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "Population: {}", self.population)
+        write!(f, "Population: {:?}", self.population)
     }
 }

@@ -1,11 +1,12 @@
 use std::rand::Rng;
 use std::mem::swap;
+use std::cmp::Ordering;
 
 use nodept::Node;
 use graph::Graph;
 use edge::Edge;
 
-#[deriving(Show, Clone)]
+#[derive(Show, Clone)]
 pub struct Tour {
     pub nodes: Vec<Node>,
     pub total_weight: f64
@@ -33,7 +34,7 @@ impl Ord for Tour {
     fn cmp(&self, other: &Tour) -> Ordering {
       match self.total_weight.partial_cmp(&other.total_weight) {
           Some(ord) => ord,
-          None => Greater
+          None => Ordering::Greater
       }
     }
 }
@@ -110,13 +111,13 @@ impl Tour {
             swap(&mut start, &mut end);
         }
 
-        let new_tour = Vec::from_fn(size, |i| {
+        let new_tour = (0..size).map(|i| {
             if i >= start && i <= end {
                 Some(self.nodes[0])
             } else {
                 None
-            }
-        });
+            }     
+        }).collect::<Vec<_>>();
         
         let mut i = 0;
         let mut new_tour_2: Vec<Node> = Vec::new();

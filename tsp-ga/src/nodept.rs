@@ -1,6 +1,8 @@
+use std::num::Float;
+
 pub type Node = uint;
 
-#[deriving(Show)]
+#[derive(Show, Copy, Clone)]
 pub struct NodePt {
     pub id: Node, 
     pub x: f64,

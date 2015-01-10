@@ -2,10 +2,11 @@
 
 name = "tsp-ga"
 version = "0.0.1"
-authors = ["webtest"]
+authors = ["Martin Tomasi"]
 
 [[bin]]
 name = "tsp"
 
 [dependencies]
 time = "*"
+getopts = "0.1.0"

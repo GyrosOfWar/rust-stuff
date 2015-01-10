@@ -1,13 +1,14 @@
+#![feature(box_syntax)]
+#![feature(int_uint)]
+#![allow(unstable)]
+
 extern crate time;
-extern crate graphviz;
 extern crate getopts;
 
 // TODO use terminal colors for nicer colored output
 //extern crate term;
 
-use graphviz as dot;
 use getopts::{optopt, optflag, getopts, OptGroup, Matches};
-use std::io::File;
 use std::os::args;
 use std::rand::{SeedableRng, StdRng};
 use time::precise_time_ns;
@@ -21,21 +22,12 @@ pub mod graph;
 pub mod nodept;
 pub mod population;
 pub mod tour;
-pub mod graphviz_conv;
+//pub mod graphviz_conv;
 
 static DEFAULT_ITERS: uint = 800;
 static DEFAULT_MUT_RATE: f64 = 0.02;
 static DEFAULT_POP_SIZE: uint = 200;
 static DEFAULT_TOURNAMENT_SIZE: uint = 15;
-
-fn write_to_file(graph: &Graph, file_name: &str) {
-    let mut f = File::create(&Path::new(file_name));
-    render_to(&mut f, graph);
-}
-
-pub fn render_to<W: Writer>(output: &mut W, graph: &Graph) {
-    dot::render(graph, output).unwrap()
-}
 
 fn usage(program: &str, opts: &[OptGroup]) {
     println!("Usage: {} [options]\n", program);
@@ -46,7 +38,7 @@ fn usage(program: &str, opts: &[OptGroup]) {
 
 fn parse_opt<T: FromStr>(matches: &Matches, opt: &str, default: T) -> T {
     match matches.opt_str(opt) {
-        Some(o) => from_str::<T>(o.as_slice()).unwrap_or(default),
+        Some(o) => o.parse::<T>().unwrap_or(default),
         None => default
     }
 }
@@ -55,7 +47,7 @@ fn main() {
     let args: Vec<String> = args().iter().map(|x| x.to_string()).collect();
     let program = args[0].clone();
 
-    let opts = [
+    let opts = &[
         optflag("h", "help", "print this help menu"), 
         optopt("m", "mutation_rate", "change the mutation rate (default: 0.015)", "MUTRATE"),
         optopt("i", "iters", "change the number of GA iterations (default: 50)", "ITERS"),
@@ -100,7 +92,7 @@ fn main() {
     }
 
     let graph = graph_opt.unwrap();
-/*
+
     if v_flag {
         println!("Running TSP-GA on a graph with |N| = {}, |E| = {}", graph.num_nodes, graph.all_edges().len());
         println!("GA parameters:");
@@ -109,7 +101,7 @@ fn main() {
         println!("\tNumber of iterations = {}", iter_count);
         println!("\tTournament size = {}", tournament_size);
     }
-*/
+
     // RNG for the GA
     let rng: StdRng = match StdRng::new() {
         Ok(r) => r,
@@ -124,7 +116,7 @@ fn main() {
     }
     // Evolve the population 
     let t0 = precise_time_ns();
-    for _ in range(0, iter_count) {
+    for _ in (0..iter_count) {
         pop = pop.evolve();
         let r = pop.fittest();
         if r.total_weight < best_result.total_weight {
@@ -134,7 +126,7 @@ fn main() {
     let t1 = precise_time_ns();
 
     // Show the end result and the time it took.
-    println!("Resulting tour: {}\nwith weight {}", best_result.nodes, best_result.total_weight);
+    println!("Resulting tour: {:?}\nwith weight {}", best_result.nodes, best_result.total_weight);
     if v_flag {
         let dt = ((t1-t0) as f64) / 1e6;
         println!("t_avg = {} ms, t_overall = {} s", dt / iter_count as f64, dt / 1000.0);

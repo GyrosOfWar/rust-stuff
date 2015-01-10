@@ -5,12 +5,10 @@ use std::rand::Rng;
 use std::io::BufferedReader;
 use std::io::File;
 use std::f64::INFINITY;
-use std::f64;
 use std::fmt;
 use std::iter::repeat;
-use std::str::FromStr;
 
-#[deriving(Clone)]
+#[derive(Clone)]
 pub struct Graph {
     pub num_nodes: uint,
     adj_matrix: Vec<f64>
@@ -28,7 +26,6 @@ impl fmt::Show for Graph {
                 }
                 else {
                     s.push_str(format!("{}\t", w).as_slice());
-                    //s.push_str(w.to_string().append("\t").as_slice());
                 }
             }
             s.push_str("\n");
@@ -47,8 +44,6 @@ impl Graph {
     pub fn from_nodes(nodes: Vec<NodePt>) -> Graph {
         let num_nodes = nodes.len();
         let size = num_nodes * num_nodes;
-        //let mut matrix: Vec<f64> = Vec::with_capacity(size);
-        //matrix.grow_set(size - 1, &INFINITY, INFINITY);
         let mut matrix: Vec<f64> = repeat(INFINITY).take(size).collect();
         for a in nodes.iter() {
             for b in nodes.iter() {
@@ -56,9 +51,9 @@ impl Graph {
                 let b_id = b.id;
                 let offset = Graph::offset(a_id, b_id, num_nodes);
                 if a_id == b_id {
-                    *matrix.get_mut(offset) = INFINITY;
+                    matrix[offset] = INFINITY;
                 } else {
-                    *matrix.get_mut(offset) = a.distance_to(*b);
+                    matrix[offset] = a.distance_to(*b);
                 }
 
             }
@@ -98,8 +93,8 @@ impl Graph {
         let mut edges: Vec<Edge> = Vec::new();
         let n = self.num_nodes;
 
-        for i in range(0, n) {
-            for j in range(i, n) {
+        for i in (0..n) {
+            for j in (i..n) {
                 let edge = self.get_edge(i, j);
                 if edge.weight != INFINITY {
                     edges.push(edge);
@@ -124,7 +119,7 @@ impl Graph {
         let numbers: Vec<f64> = string
             .slice_to(end)
             .split(' ')
-            .map(|x| f64::from_str(x))
+            .map(|x| x.parse::<f64>())
             .filter(|f| f.is_some())
             .map(|o| o.unwrap())
             .collect();

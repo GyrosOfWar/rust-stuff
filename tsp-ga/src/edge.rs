@@ -2,7 +2,7 @@ use nodept::{Node, NodePt};
 use std::cmp::Ordering;
 use std::cmp::Ordering::{Less, Equal, Greater};
 
-#[deriving(Show, Clone)]
+#[derive(Show, Clone, Copy)]
 pub struct Edge {
     pub from: Node,
     pub to: Node,
