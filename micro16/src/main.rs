@@ -1,3 +1,5 @@
+#![feature(int_uint)]
+
 pub mod bitset32;
 pub mod cpu;
 pub mod instruction;

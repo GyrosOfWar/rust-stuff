@@ -25,14 +25,14 @@ enum CondModes {
 struct Cpu {
     registers: RegisterSet,
     memory: Memory,
-    program: [i32, ..PROGRAM_LENGTH],
+    program: [i32; PROGRAM_LENGTH],
     program_counter: u8,
     negative_flag: bool,
     zero_flag: bool
 }
 
 impl Cpu {
-	fn new(prog: [i32, .. PROGRAM_LENGTH]) -> Cpu {
+	fn new(prog: [i32; PROGRAM_LENGTH]) -> Cpu {
 		Cpu { registers: RegisterSet::new(),
 			  memory: Memory::new(), 
 			  program: prog,
@@ -96,14 +96,14 @@ impl RegisterSet {
 }
 
 struct Memory {
-	data: [i16, ..MEMORY_SIZE],
+	data: [i16; MEMORY_SIZE],
 	ready: bool
 }
 
 impl Memory {
 	fn new() -> Memory {
 		Memory { 
-			data: [0i16, ..MEMORY_SIZE], 
+			data: [0i16; MEMORY_SIZE], 
 			ready: false 
 		}
 	}

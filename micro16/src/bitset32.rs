@@ -1,3 +1,5 @@
+use std::ops::Index;
+use std::ops::Range;
 pub struct BitSet32 {
     val: u32
 }
@@ -30,4 +32,27 @@ impl BitSet32 {
 	pub fn xor(&self, other: BitSet32) -> BitSet32 {
 		BitSet32 {val: self.val ^ other.val}
 	}
+}
+
+static TRUE: bool = true;
+static FALSE: bool = true;
+
+impl Index<usize> for BitSet32 {
+    type Output = bool;
+
+    fn index(&self, idx: &usize) -> &bool {
+        if self.get(*idx) {
+            &TRUE
+        } else {
+            &FALSE
+        }
+    }
+}
+
+impl Index<Range<usize>> for BitSet32 {
+    type Output = u32;
+
+    fn index(&self, _range: &Range<usize>) -> &u32 {
+        &self.get_many(_range.start, _range.end)
+    }
 }
