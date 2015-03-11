@@ -2,19 +2,19 @@ use edge::Edge;
 use nodept::{Node, NodePt};
 
 use std::rand::Rng;
-use std::io::BufferedReader;
-use std::io::File;
+use std::old_io::BufferedReader;
+use std::old_io::File;
 use std::f64::INFINITY;
 use std::fmt;
 use std::iter::repeat;
 
 #[derive(Clone)]
 pub struct Graph {
-    pub num_nodes: uint,
+    pub num_nodes: usize,
     adj_matrix: Vec<f64>
 }
 
-impl fmt::Show for Graph {
+impl fmt::Debug for Graph {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let mut s = String::new();
 
@@ -37,7 +37,7 @@ impl fmt::Show for Graph {
 
 impl Graph {
     #[inline]
-    fn offset(i: uint, j: uint, n_nodes: uint) -> uint {
+    fn offset(i: usize, j: usize, n_nodes: usize) -> usize {
         i + j * n_nodes
     }
 
@@ -65,7 +65,7 @@ impl Graph {
         }
     }
 
-    pub fn random_graph<R: Rng>(rng: &mut R, num_nodes: uint, x_max: f64, y_max: f64) -> Graph {
+    pub fn random_graph<R: Rng>(rng: &mut R, num_nodes: usize, x_max: f64, y_max: f64) -> Graph {
         // Generates a list of 2-tuples of floats, adds an incrementing counter to each 
         // tuple and creates a NodePt (node with ID and 2D coordinates) from it.
         let points = rng.gen_iter::<(f64, f64)>()
@@ -120,11 +120,11 @@ impl Graph {
             .slice_to(end)
             .split(' ')
             .map(|x| x.parse::<f64>())
-            .filter(|f| f.is_some())
+            .filter(|f| f.is_ok())
             .map(|o| o.unwrap())
             .collect();
         if numbers.len() >= 3 {
-            let result = NodePt::new(numbers[0] as uint - 1, numbers[1], numbers[2]);
+            let result = NodePt::new(numbers[0] as usize - 1, numbers[1], numbers[2]);
             Some(result)
         }
         else {  

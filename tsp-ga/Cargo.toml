@@ -9,4 +9,4 @@ name = "tsp"
 
 [dependencies]
 time = "*"
-getopts = "0.1.0"
+getopts = "*"

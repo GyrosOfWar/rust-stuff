@@ -34,4 +34,6 @@ impl Instruction {
     pub fn ms(&self) -> bool {
         self.bits.get(21)
     }
+
+    
 }

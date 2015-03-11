@@ -9,15 +9,14 @@ pub struct Population {
     graph: Box<Graph>,
     population: Vec<Tour>,
     mutation_rate: f64,
-    tournament_size: uint
+    tournament_size: usize
 }
 
 impl Population {
     // Creates a new population with a given size, on a given graph and with the given
     // GA parameters (mutation rate and tournament size).
     // The population is a list of tours, which are randomly generated.
-    pub fn new(population_count: uint, graph: Box<Graph>, mutation_rate: f64, tournament_size: uint, mut rng: StdRng) -> Population {
-        //let population = Vec::from_fn(population_count, |_| Tour::random_tour(&mut rng, &*graph));
+    pub fn new(population_count: usize, graph: Box<Graph>, mutation_rate: f64, tournament_size: usize, mut rng: StdRng) -> Population {
         let population = (0..population_count).map(|_| Tour::random_tour(&mut rng, &*graph)).collect::<Vec<_>>();
         Population {
             rng: rng,
@@ -39,7 +38,7 @@ impl Population {
         let size = self.population.len();
         let mut buffer: Vec<Tour> = Vec::new();
         for _ in range(0, self.tournament_size) {
-            let t = (self.rng.gen::<f64>() * (size as f64)) as uint;
+            let t = (self.rng.gen::<f64>() * (size as f64)) as usize;
             buffer.push(self.population[t].clone());
         }
         buffer.iter().min().unwrap().clone()
@@ -71,7 +70,7 @@ impl Population {
     }
 }
 
-impl fmt::Show for Population {
+impl fmt::Debug for Population {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "Population: {:?}", self.population)
     }

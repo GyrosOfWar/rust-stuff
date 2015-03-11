@@ -8,8 +8,8 @@ extern crate getopts;
 // TODO use terminal colors for nicer colored output
 //extern crate term;
 
-use getopts::{optopt, optflag, getopts, OptGroup, Matches};
-use std::os::args;
+use getopts::{Options, Matches};
+use std::env::args;
 use std::rand::{SeedableRng, StdRng};
 use time::precise_time_ns;
 use std::str::FromStr;
@@ -29,11 +29,9 @@ static DEFAULT_MUT_RATE: f64 = 0.02;
 static DEFAULT_POP_SIZE: uint = 200;
 static DEFAULT_TOURNAMENT_SIZE: uint = 15;
 
-fn usage(program: &str, opts: &[OptGroup]) {
-    println!("Usage: {} [options]\n", program);
-    for o in opts.iter() {
-        println!("-{}\t--{}: {}", o.short_name, o.long_name, o.desc);
-    }
+fn usage(program: &str, opts: Options) {
+    let brief = format!("Usage: {} [options]", program);
+    print!("{}", opts.usage(&brief[..]));
 }
 
 fn parse_opt<T: FromStr>(matches: &Matches, opt: &str, default: T) -> T {
@@ -44,20 +42,18 @@ fn parse_opt<T: FromStr>(matches: &Matches, opt: &str, default: T) -> T {
 }
 
 fn main() {
-    let args: Vec<String> = args().iter().map(|x| x.to_string()).collect();
+    let args: Vec<String> = args().collect();
     let program = args[0].clone();
+    let mut opts = Options::new();
+    opts.optflag("h", "help", "print this help menu");
+    opts.optopt("m", "mutation_rate", "change the mutation rate (default: 0.015)", "MUTRATE");
+    opts.optopt("i", "iters", "change the number of GA iterations (default: 50)", "ITERS");
+    opts.optopt("p", "pop_size", "change the population size (default: 5000)", "POPSIZE");
+    opts.optflag("v", "verbose", "print a lot of information, including timing.");
+    opts.optopt("r", "read", "read graph from a .tsp file", "READ");
+    opts.optopt("t", "tournament_size", "change the number of specimens used for tournament selection", "TSIZE");
 
-    let opts = &[
-        optflag("h", "help", "print this help menu"), 
-        optopt("m", "mutation_rate", "change the mutation rate (default: 0.015)", "MUTRATE"),
-        optopt("i", "iters", "change the number of GA iterations (default: 50)", "ITERS"),
-        optopt("p", "pop_size", "change the population size (default: 5000)", "POPSIZE"),
-        optflag("v", "verbose", "print a lot of information, including timing."),
-        optopt("r", "read", "read graph from a .tsp file", "READ"),
-        optopt("t", "tournament_size", "change the number of specimens used for tournament selection", "TSIZE")
-    ];
-
-    let matches = match getopts(args.tail(), opts) {
+    let matches = match opts.parse(args.tail()) {
         Ok(m) => m,
         Err(_) => panic!("Failed matching options")
     };
