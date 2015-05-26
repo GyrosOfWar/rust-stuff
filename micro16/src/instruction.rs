@@ -1,4 +1,5 @@
 use bitset32::BitSet32;
+use cpu::{AluMode, ShifterMode, CondMode};
 
 pub struct Instruction {
     bits: BitSet32
@@ -35,5 +36,31 @@ impl Instruction {
         self.bits.get(21)
     }
 
-    
+    pub fn rd_wr(&self) -> bool {
+        self.bits.get(22)
+    }
+
+    pub fn mar(&self) -> bool {
+        self.bits.get(23)
+    }
+
+    pub fn mbr(&self) -> bool {
+        self.bits.get(24)
+    }
+
+    pub fn sh(&self) -> ShifterMode {
+        ShifterMode::from_u8(self.bits.get_many(25, 27) as u8)
+    }
+
+    pub fn alu(&self) -> AluMode {
+        AluMode::from_u8(self.bits.get_many(27, 29) as u8)
+    }
+
+    pub fn cond(&self) -> CondMode {
+        CondMode::from_u8(self.bits.get_many(29, 31) as u8)
+    }
+
+    pub fn a_mux(&self) -> bool {
+        self.bits.get(31)
+    }
 }
