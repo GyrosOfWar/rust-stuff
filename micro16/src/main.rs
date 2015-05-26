@@ -16,7 +16,7 @@ fn main() {
     println!("{:?}", cpu);
     
     while !cpu.done() {
-        println!("{:?}", cpu);
+    //    println!("{:?}", cpu);
         cpu.step();
     }
 }

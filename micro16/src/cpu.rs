@@ -1,5 +1,4 @@
 use std::fmt;
-use std::ops::{Index, IndexMut};
 use instruction::Instruction;
 use std::mem;
 
@@ -100,7 +99,8 @@ impl<'a> Cpu<'a> {
         }
 
         if instr.mar() {
-            self.registers[MAR_REGISTER_IDX] = self.registers[b_bus];
+            let val = self.registers.get(b_bus);
+            self.registers.set(MAR_REGISTER_IDX, val);
         }
         
         let alu_result = self.alu_op(instr.alu(), a_bus, b_bus);
@@ -111,7 +111,8 @@ impl<'a> Cpu<'a> {
         let shifter_result = self.shifter_op(instr.sh(), alu_result);        
         self.cond_op(instr.cond(), instr.addr());
 
-        self.registers[s_bus] = shifter_result;
+        println!("S-BUS: {}, ENS: {}", s_bus, instr.ens());
+        self.registers.set(s_bus, shifter_result);
         
         if instr.ms() {
             let mar = self.registers.mar;
@@ -119,7 +120,7 @@ impl<'a> Cpu<'a> {
 
             if instr.rd_wr() {
                 match self.memory.read(mar as usize) {
-                    Some(val) => self.registers[MBR_REGISTER_IDX] = val,
+                    Some(val) => self.registers.set(MBR_REGISTER_IDX, val), 
                     None => ()
                 }
             } else {
@@ -132,10 +133,10 @@ impl<'a> Cpu<'a> {
 
     fn alu_op(&self, alu_mode: AluMode, a_bus: u8, b_bus: u8) -> i16 {
         match alu_mode {
-            AluMode::NoOp => self.registers[a_bus],
-            AluMode::Add => self.registers[a_bus] + self.registers[b_bus],
-            AluMode::BitAnd => self.registers[a_bus] & self.registers[b_bus],
-            AluMode::BitNot => !self.registers[a_bus]
+            AluMode::NoOp => self.registers.get(a_bus),
+            AluMode::Add => self.registers.get(a_bus) + self.registers.get(b_bus),
+            AluMode::BitAnd => self.registers.get(a_bus) & self.registers.get(b_bus),
+            AluMode::BitNot => !self.registers.get(a_bus)
         }
     }
 
@@ -163,10 +164,10 @@ impl<'a> Cpu<'a> {
 
 impl<'a> fmt::Debug for Cpu<'a> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "CPU {{\n");
-        write!(f, "{:?},\n", self.registers);
-        write!(f, "{:?},\n", self.memory);
-        write!(f, "program_counter: {}\n", self.program_counter);
+        write!(f, "CPU {{\n").unwrap();
+        write!(f, "{:?},\n", self.registers).unwrap();
+        write!(f, "{:?},\n", self.memory).unwrap();
+        write!(f, "program_counter: {}\n", self.program_counter).unwrap();
         write!(f, "}}")
     }
 }
@@ -192,7 +193,7 @@ pub struct RegisterSet {
 }
 
 impl RegisterSet {
-    fn new() -> RegisterSet {
+    pub fn new() -> RegisterSet {
 	RegisterSet {
 	    zero: 0,
 	    one: 1,
@@ -212,53 +213,47 @@ impl RegisterSet {
 	    mbr: 0
 	}
     }
-}
 
-impl Index<u8> for RegisterSet {
-    type Output = i16;
-
-    fn index(&self, index: u8) -> &i16 {
+    pub fn get(&self, index: u8) -> i16 {
         match index {
-            0 => panic!("Writing to read-only register: 0"),
-            1 => panic!("Writing to read-only register: 1"),
-            2 => panic!("Writing to read-only register: -1"),
-            3 => &self.mar,
-            4 => &self.r0,
-            5 => &self.r1,
-            6 => &self.r2,
-            7 => &self.r3,
-            8 => &self.r4,
-            9 => &self.r5,
-            10 => &self.r6,
-            11 => &self.r7,
-            12 => &self.r8,
-            13 => &self.r9,
-            14 => &self.r10,
-            15 => &self.mbr,
+            0 => 0,
+            1 => 1,
+            2 => -1,
+            3 => self.mar,
+            4 => self.r0,
+            5 => self.r1,
+            6 => self.r2,
+            7 => self.r3,
+            8 => self.r4,
+            9 => self.r5,
+            10 => self.r6,
+            11 => self.r7,
+            12 => self.r8,
+            13 => self.r9,
+            14 => self.r10,
+            15 => self.mbr,
             _ => panic!("Invalid index!")
         }
     }
-}
 
-impl IndexMut<u8> for RegisterSet {
-    fn index_mut(&mut self, index: u8) -> &mut i16 {
+    pub fn set(&mut self, index: u8, value: i16) {
         match index {
-            0 => &mut self.zero,
-            1 => &mut self.one,
-            2 => &mut self.minus_one,
-            3 => &mut self.mar,
-            4 => &mut self.r0,
-            5 => &mut self.r1,
-            6 => &mut self.r2,
-            7 => &mut self.r3,
-            8 => &mut self.r4,
-            9 => &mut self.r5,
-            10 => &mut self.r6,
-            11 => &mut self.r7,
-            12 => &mut self.r8,
-            13 => &mut self.r9,
-            14 => &mut self.r10,
-            15 => &mut self.mbr,
+            0 => panic!("Setting value of read-only register"),
+            1 => panic!("Setting value of read-only register"),
+            2 => panic!("Setting value of read-only register"),
+            3 => self.mar = value,
+            4 => self.r0 = value,
+            5 => self.r1 = value,
+            6 => self.r2 = value,
+            7 => self.r3 = value,
+            8 => self.r4 = value,
+            9 => self.r5 = value,
+            10 => self.r6 = value,
+            11 => self.r7 = value,
+            12 => self.r8 = value,
+            13 => self.r9 = value,
+            14 => self.r10 = value,
+            15 => self.mbr = value,
             _ => panic!("Invalid index!")
         }
     }
@@ -308,10 +303,10 @@ impl fmt::Debug for Memory {
         write!(f, "Memory {{");
         for (i, &val) in self.data.iter().enumerate() {
             if val != 0 {
-                write!(f, "\t{}: {}\n", i, val);
+                write!(f, "\t{}: {}\n", i, val).unwrap();
             }
         }
-        write!(f, "}}");
+        write!(f, "}}").unwrap();
         Ok(())
     }
 }
