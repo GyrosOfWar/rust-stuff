@@ -1,3 +1,4 @@
+use std::fmt;
 use std::ops::{Index, IndexMut};
 use instruction::Instruction;
 use std::mem;
@@ -8,6 +9,7 @@ const MAR_REGISTER_IDX: u8 = 3;
 const MBR_REGISTER_IDX: u8 = 15;
 
 #[repr(u8)]
+#[derive(Debug)]
 pub enum AluMode {
     NoOp = 0,
     Add = 1,
@@ -22,6 +24,7 @@ impl AluMode {
 }
 
 #[repr(u8)]
+#[derive(Debug)]
 pub enum ShifterMode {
     NoOp = 0,
     Left = 1,
@@ -35,6 +38,7 @@ impl ShifterMode {
 }
 
 #[repr(u8)]
+#[derive(Debug)]
 pub enum CondMode {
     NoOp = 0,
     IfNegative = 1,
@@ -48,32 +52,32 @@ impl CondMode {
     }
 }
 
-#[derive(Debug)]
-pub struct Cpu {
+pub struct Cpu<'a> {
     registers: RegisterSet,
     memory: Memory,
-    program: [u32; PROGRAM_LENGTH],
+    program: &'a [u32],
     program_counter: u8,
     negative_flag: bool,
-    zero_flag: bool,
-    program_length: u8
+    zero_flag: bool
 }
 
-impl Cpu {
-    pub fn new(prog: [u32; PROGRAM_LENGTH], program_length: u8) -> Cpu {
+impl<'a> Cpu<'a> {
+    pub fn new(prog: &'a [u32]) -> Cpu<'a> {
+        if prog.len() > PROGRAM_LENGTH {
+            panic!("Program too long!");
+        }
 	Cpu {
             registers: RegisterSet::new(),
 	    memory: Memory::new(), 
 	    program: prog,
 	    program_counter: 0,
 	    zero_flag: false,
-	    negative_flag: false,
-            program_length: program_length
+	    negative_flag: false
         }
     }
 
     pub fn done(&self) -> bool {
-        self.program_counter < self.program_length
+        self.program_counter >= self.program.len() as u8
     }
     
     pub fn step(&mut self) {
@@ -86,7 +90,7 @@ impl Cpu {
         }
         
         let instr = Instruction::new(next_instruction);
-
+        
         let a_bus = if instr.a_mux() { MAR_REGISTER_IDX } else { instr.a_bus() };
         let b_bus = instr.b_bus();
         let s_bus = instr.s_bus();
@@ -98,17 +102,17 @@ impl Cpu {
         if instr.mar() {
             self.registers[MAR_REGISTER_IDX] = self.registers[b_bus];
         }
-
+        
         let alu_result = self.alu_op(instr.alu(), a_bus, b_bus);
-
+        
         self.negative_flag = alu_result < 0;
         self.zero_flag = alu_result == 0;
         
-        let shifter_result = self.shifter_op(instr.sh(), alu_result);
+        let shifter_result = self.shifter_op(instr.sh(), alu_result);        
         self.cond_op(instr.cond(), instr.addr());
 
         self.registers[s_bus] = shifter_result;
-
+        
         if instr.ms() {
             let mar = self.registers.mar;
             let mbr = self.registers.mbr;
@@ -154,6 +158,16 @@ impl Cpu {
             },
             CondMode::GoTo => self.program_counter = addr
         }
+    }
+}
+
+impl<'a> fmt::Debug for Cpu<'a> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "CPU {{\n");
+        write!(f, "{:?},\n", self.registers);
+        write!(f, "{:?},\n", self.memory);
+        write!(f, "program_counter: {}\n", self.program_counter);
+        write!(f, "}}")
     }
 }
 
@@ -205,9 +219,9 @@ impl Index<u8> for RegisterSet {
 
     fn index(&self, index: u8) -> &i16 {
         match index {
-            0 => &self.zero,
-            1 => &self.one,
-            2 => &self.minus_one,
+            0 => panic!("Writing to read-only register: 0"),
+            1 => panic!("Writing to read-only register: 1"),
+            2 => panic!("Writing to read-only register: -1"),
             3 => &self.mar,
             4 => &self.r0,
             5 => &self.r1,
@@ -228,11 +242,28 @@ impl Index<u8> for RegisterSet {
 
 impl IndexMut<u8> for RegisterSet {
     fn index_mut(&mut self, index: u8) -> &mut i16 {
-        &mut (self[index])
+        match index {
+            0 => &mut self.zero,
+            1 => &mut self.one,
+            2 => &mut self.minus_one,
+            3 => &mut self.mar,
+            4 => &mut self.r0,
+            5 => &mut self.r1,
+            6 => &mut self.r2,
+            7 => &mut self.r3,
+            8 => &mut self.r4,
+            9 => &mut self.r5,
+            10 => &mut self.r6,
+            11 => &mut self.r7,
+            12 => &mut self.r8,
+            13 => &mut self.r9,
+            14 => &mut self.r10,
+            15 => &mut self.mbr,
+            _ => panic!("Invalid index!")
+        }
     }
 }
 
-#[derive(Debug)]
 pub struct Memory {
     data: [i16; MEMORY_SIZE],
     ready: bool
@@ -269,5 +300,18 @@ impl Memory {
 	    self.data[idx] = value;
 	    true
 	}
+    }
+}
+
+impl fmt::Debug for Memory {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "Memory {{");
+        for (i, &val) in self.data.iter().enumerate() {
+            if val != 0 {
+                write!(f, "\t{}: {}\n", i, val);
+            }
+        }
+        write!(f, "}}");
+        Ok(())
     }
 }
