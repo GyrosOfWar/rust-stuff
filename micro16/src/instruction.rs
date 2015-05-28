@@ -1,6 +1,7 @@
 use bitset32::BitSet32;
 use cpu::{AluMode, ShifterMode, CondMode};
 
+#[derive(Debug)]
 pub struct Instruction {
     bits: BitSet32
 }

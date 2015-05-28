@@ -86,10 +86,9 @@ impl<'a> Cpu<'a> {
 	let next_instruction = self.program[self.program_counter as usize];
         if next_instruction == 0 {
             return;
-        }
-        
+        }        
         let instr = Instruction::new(next_instruction);
-        
+        println!("{:?}", instr);
         let a_bus = if instr.a_mux() { MAR_REGISTER_IDX } else { instr.a_bus() };
         let b_bus = instr.b_bus();
         let s_bus = instr.s_bus();
@@ -110,10 +109,10 @@ impl<'a> Cpu<'a> {
         
         let shifter_result = self.shifter_op(instr.sh(), alu_result);        
         self.cond_op(instr.cond(), instr.addr());
-
-        println!("S-BUS: {}, ENS: {}", s_bus, instr.ens());
-        self.registers.set(s_bus, shifter_result);
         
+        if instr.ens() {
+            self.registers.set(s_bus, shifter_result);
+        }
         if instr.ms() {
             let mar = self.registers.mar;
             let mbr = self.registers.mbr;
@@ -124,7 +123,8 @@ impl<'a> Cpu<'a> {
                     None => ()
                 }
             } else {
-                self.memory.write(mar as usize, mbr);
+                let wrote = self.memory.write(mar as usize, mbr);
+                println!("wrote data to memory: {}", wrote);
             }
         }
         
@@ -165,9 +165,9 @@ impl<'a> Cpu<'a> {
 impl<'a> fmt::Debug for Cpu<'a> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "CPU {{\n").unwrap();
-        write!(f, "{:?},\n", self.registers).unwrap();
-        write!(f, "{:?},\n", self.memory).unwrap();
-        write!(f, "program_counter: {}\n", self.program_counter).unwrap();
+        write!(f, "{:#?},\n", self.registers).unwrap();
+        write!(f, "\t{:?},\n", self.memory).unwrap();
+        write!(f, "\tprogram_counter: {}\n", self.program_counter).unwrap();
         write!(f, "}}")
     }
 }
@@ -293,6 +293,7 @@ impl Memory {
 	else {
 	    self.ready = false;
 	    self.data[idx] = value;
+            println!("Data at {}: {}", idx, value);
 	    true
 	}
     }

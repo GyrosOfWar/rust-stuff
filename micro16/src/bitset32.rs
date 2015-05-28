@@ -1,3 +1,5 @@
+use std::fmt;
+
 pub struct BitSet32 {
     val: u32
 }
@@ -34,5 +36,11 @@ impl BitSet32 {
     #[inline]
     pub fn xor(&self, other: BitSet32) -> BitSet32 {
 	BitSet32 { val: self.val ^ other.val }
+    }
+}
+
+impl fmt::Debug for BitSet32 {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "BitSet32 {{ val: {:b} }}", self.val)
     }
 }
