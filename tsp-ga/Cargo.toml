@@ -10,3 +10,4 @@ name = "tsp"
 [dependencies]
 time = "*"
 getopts = "*"
+rand = "*"

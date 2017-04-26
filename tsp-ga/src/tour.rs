@@ -1,4 +1,4 @@
-use std::rand::Rng;
+use rand::Rng;
 use std::mem::swap;
 use std::cmp::Ordering;
 
@@ -6,7 +6,7 @@ use nodept::Node;
 use graph::Graph;
 use edge::Edge;
 
-#[derive(Show, Clone)]
+#[derive(Debug, Clone)]
 pub struct Tour {
     pub nodes: Vec<Node>,
     pub total_weight: f64
@@ -52,7 +52,7 @@ impl Tour {
         let mut tour_weight = 0.0;
         let mut last_node = tour[0];
 
-        for idx in range(1, tour.len()) {
+        for idx in 1..tour.len() {
             let node = tour[idx];
             let x = graph.get(last_node, node);
             tour_weight += x;
@@ -80,10 +80,10 @@ impl Tour {
         let size = self.nodes.len() as f64;
         let mut mutated: Vec<Node> = self.nodes.clone();
 
-        for i in range(0, self.nodes.len()) {
+        for i in 0..self.nodes.len() {
             let t = rng.gen::<f64>();
             if t < mutation_rate {
-                let j = (rng.gen::<f64>() * size) as uint;
+                let j = (rng.gen::<f64>() * size) as usize;
                 mutated.as_mut_slice().swap(i, j);
             }
         }
@@ -101,8 +101,8 @@ impl Tour {
     pub fn crossover<R: Rng>(&self, other: Tour, graph: &Graph, rng: &mut R) -> Tour {
         let size = self.nodes.len();
 
-        let mut start = rng.gen_range::<uint>(0, size);
-        let mut end = rng.gen_range::<uint>(0, size);
+        let mut start = rng.gen_range::<usize>(0, size);
+        let mut end = rng.gen_range::<usize>(0, size);
         if start == end {
             return self.clone()
         }
@@ -140,7 +140,7 @@ impl Tour {
     pub fn to_edges(&self, graph: &Graph) -> Vec<Edge> {
         let mut edges: Vec<Edge> = Vec::new();
         let mut last_node = self.nodes[0];
-        for i in range(1, self.nodes.len()) {
+        for i in 1..self.nodes.len() {
             let next_node = self.nodes[i];
             let edge = graph.get_edge(last_node,next_node);
             edges.push(edge);

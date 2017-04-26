@@ -301,7 +301,7 @@ impl Memory {
 
 impl fmt::Debug for Memory {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "Memory {{");
+        write!(f, "Memory {{").unwrap();
         for (i, &val) in self.data.iter().enumerate() {
             if val != 0 {
                 write!(f, "\t{}: {}\n", i, val).unwrap();

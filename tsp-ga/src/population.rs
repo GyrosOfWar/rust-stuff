@@ -1,7 +1,7 @@
 use graph::Graph;
 use tour::Tour;
 
-use std::rand::{Rng, StdRng};
+use rand::{Rng, StdRng};
 use std::fmt;
 
 pub struct Population {
@@ -37,7 +37,7 @@ impl Population {
     pub fn tournament_selection(&mut self) -> Tour {
         let size = self.population.len();
         let mut buffer: Vec<Tour> = Vec::new();
-        for _ in range(0, self.tournament_size) {
+        for _ in 0..self.tournament_size {
             let t = (self.rng.gen::<f64>() * (size as f64)) as usize;
             buffer.push(self.population[t].clone());
         }
@@ -51,7 +51,7 @@ impl Population {
     pub fn evolve(&mut self) -> Population {
         let mut new_population: Vec<Tour> = Vec::new();
 
-        for _ in range(0, self.population.len()) {
+        for _ in 0..self.population.len() {
             let parent1 = self.tournament_selection();
             let parent2 = self.tournament_selection();
             let child: Tour = parent1.crossover(parent2, &*self.graph, &mut self.rng);

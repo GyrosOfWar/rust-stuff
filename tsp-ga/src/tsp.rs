@@ -1,16 +1,13 @@
-#![feature(box_syntax)]
-#![feature(int_uint)]
-#![allow(unstable)]
-
 extern crate time;
 extern crate getopts;
+extern crate rand;
 
 // TODO use terminal colors for nicer colored output
 //extern crate term;
 
 use getopts::{Options, Matches};
 use std::env::args;
-use std::rand::{SeedableRng, StdRng};
+use rand::{SeedableRng, StdRng};
 use time::precise_time_ns;
 use std::str::FromStr;
 
@@ -24,10 +21,10 @@ pub mod population;
 pub mod tour;
 //pub mod graphviz_conv;
 
-static DEFAULT_ITERS: uint = 800;
+static DEFAULT_ITERS: usize = 800;
 static DEFAULT_MUT_RATE: f64 = 0.02;
-static DEFAULT_POP_SIZE: uint = 200;
-static DEFAULT_TOURNAMENT_SIZE: uint = 15;
+static DEFAULT_POP_SIZE: usize = 200;
+static DEFAULT_TOURNAMENT_SIZE: usize = 15;
 
 fn usage(program: &str, opts: Options) {
     let brief = format!("Usage: {} [options]", program);
@@ -42,7 +39,7 @@ fn parse_opt<T: FromStr>(matches: &Matches, opt: &str, default: T) -> T {
 }
 
 fn main() {
-    let args: Vec<String> = args().collect();
+    let args: Vec<String> = args().skip(1).collect();
     let program = args[0].clone();
     let mut opts = Options::new();
     opts.optflag("h", "help", "print this help menu");
@@ -53,41 +50,39 @@ fn main() {
     opts.optopt("r", "read", "read graph from a .tsp file", "READ");
     opts.optopt("t", "tournament_size", "change the number of specimens used for tournament selection", "TSIZE");
 
-    let matches = match opts.parse(args.tail()) {
+    let matches = match opts.parse(args) {
         Ok(m) => m,
         Err(_) => panic!("Failed matching options")
     };
 
     if matches.opt_present("h") {
-        usage(program.as_slice(), opts);
+        usage(&program, opts);
         return;
     }
     let v_flag = matches.opt_present("v");
 
     let node_count = 15;
-    let tournament_size = parse_opt::<uint>(&matches, "t", DEFAULT_TOURNAMENT_SIZE);
+    let tournament_size = parse_opt::<usize>(&matches, "t", DEFAULT_TOURNAMENT_SIZE);
     let scale = 200.0;
     let mutation_rate = parse_opt::<f64>(&matches, "m", DEFAULT_MUT_RATE);
-    let iter_count = parse_opt::<uint>(&matches, "i", DEFAULT_ITERS);
-    let population_size = parse_opt::<uint>(&matches, "p", DEFAULT_POP_SIZE);
+    let iter_count = parse_opt::<usize>(&matches, "i", DEFAULT_ITERS);
+    let population_size = parse_opt::<usize>(&matches, "p", DEFAULT_POP_SIZE);
 
-    let mut graph_opt: Option<Graph>;
+    let graph;
 
     if matches.opt_present("r") {
         let file_path = parse_opt::<String>(&matches, "r", String::new());
         if file_path.is_empty() {
             panic!("failed to parse file path")
         }
-        graph_opt = Some(Graph::from_file(file_path.as_slice()));
+        graph = Graph::from_file(&file_path).unwrap();
     }
     else {    
         // make a seeded RNG for the random graph generation for consistent testing
         let seed: &[_] = &[12, 13, 14, 15];
         let mut s_rng: StdRng = SeedableRng::from_seed(seed);
-        graph_opt = Some(Graph::random_graph(&mut s_rng, node_count, scale, scale))
+        graph = Graph::random_graph(&mut s_rng, node_count, scale, scale);
     }
-
-    let graph = graph_opt.unwrap();
 
     if v_flag {
         println!("Running TSP-GA on a graph with |N| = {}, |E| = {}", graph.num_nodes, graph.all_edges().len());
@@ -104,7 +99,7 @@ fn main() {
         Err(_) => panic!("failed to acquire RNG")
     };
 
-    let mut pop = Population::new(population_size, box graph, mutation_rate, tournament_size, rng);
+    let mut pop = Population::new(population_size, Box::new(graph), mutation_rate, tournament_size, rng);
     let first_result = pop.fittest().total_weight;
     let mut best_result = pop.fittest();
     if v_flag {
@@ -112,7 +107,7 @@ fn main() {
     }
     // Evolve the population 
     let t0 = precise_time_ns();
-    for _ in (0..iter_count) {
+    for _ in 0..iter_count {
         pop = pop.evolve();
         let r = pop.fittest();
         if r.total_weight < best_result.total_weight {

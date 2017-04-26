@@ -1,12 +1,13 @@
 use edge::Edge;
 use nodept::{Node, NodePt};
 
-use std::rand::Rng;
-use std::old_io::BufferedReader;
-use std::old_io::File;
+use rand::Rng;
 use std::f64::INFINITY;
 use std::fmt;
 use std::iter::repeat;
+use std::path::Path;
+use std::io::{self, BufReader, BufRead};
+use std::fs::File;
 
 #[derive(Clone)]
 pub struct Graph {
@@ -18,14 +19,14 @@ impl fmt::Debug for Graph {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let mut s = String::new();
 
-        for i in range(0, self.num_nodes) {
-            for j in range(0, self.num_nodes) {
+        for i in 0..self.num_nodes {
+            for j in 0..self.num_nodes {
                 let w = self.get(i, j);
                 if w == INFINITY {
                     s.push_str("∞\t");
                 }
                 else {
-                    s.push_str(format!("{}\t", w).as_slice());
+                    s.push_str(&format!("{}\t", w));
                 }
             }
             s.push_str("\n");
@@ -93,8 +94,8 @@ impl Graph {
         let mut edges: Vec<Edge> = Vec::new();
         let n = self.num_nodes;
 
-        for i in (0..n) {
-            for j in (i..n) {
+        for i in 0..n {
+            for j in i..n {
                 let edge = self.get_edge(i, j);
                 if edge.weight != INFINITY {
                     edges.push(edge);
@@ -106,8 +107,7 @@ impl Graph {
     }
 
     pub fn get_nodes(&self) -> Vec<Node> {
-        let nodes: Vec<Node> = range(0, self.num_nodes).collect();
-        nodes
+        (0..self.num_nodes).collect()
     }
 
     fn read_point(string: &str) -> Option<NodePt> {
@@ -116,8 +116,7 @@ impl Graph {
             end += 1;
         }
 
-        let numbers: Vec<f64> = string
-            .slice_to(end)
+        let numbers: Vec<f64> = string[..end]
             .split(' ')
             .map(|x| x.parse::<f64>())
             .filter(|f| f.is_ok())
@@ -133,12 +132,12 @@ impl Graph {
         
     }
 
-    pub fn from_file(file_path: &str) -> Graph {
+    pub fn from_file(file_path: &str) -> io::Result<Graph> {
         let path = Path::new(file_path);
-        let mut file = BufferedReader::new(File::open(&path));
+        let file = BufReader::new(File::open(&path)?);
         let node_opts: Vec<Option<NodePt>> = file.lines()
             .map(|r| match r {
-                Ok(string) => Graph::read_point(string.as_slice()),
+                Ok(string) => Graph::read_point(&string),
                 Err(_) => panic!("failed to read")
             })
             .collect();
@@ -147,6 +146,6 @@ impl Graph {
             .map(|y| y.unwrap())
             .collect();
 
-        Graph::from_nodes(nodes)
+        Ok(Graph::from_nodes(nodes))
     }
 }
