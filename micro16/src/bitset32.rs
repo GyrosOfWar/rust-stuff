@@ -1,17 +1,17 @@
 use std::fmt;
 
 pub struct BitSet32 {
-    val: u32
+    val: u32,
 }
 
 impl BitSet32 {
     pub fn new(v: u32) -> BitSet32 {
-	BitSet32 { val: v }
+        BitSet32 { val: v }
     }
-    
+
     #[inline]
     pub fn get(&self, i: usize) -> bool {
-	(self.val & (1 << i)) != 0
+        (self.val & (1 << i)) != 0
     }
 
     #[inline]
@@ -25,17 +25,17 @@ impl BitSet32 {
 
     #[inline]
     pub fn and(&self, other: BitSet32) -> BitSet32 {
-	BitSet32 { val: self.val & other.val }
+        BitSet32 { val: self.val & other.val }
     }
 
     #[inline]
     pub fn or(&self, other: BitSet32) -> BitSet32 {
-	BitSet32 { val: self.val | other.val }
+        BitSet32 { val: self.val | other.val }
     }
 
     #[inline]
     pub fn xor(&self, other: BitSet32) -> BitSet32 {
-	BitSet32 { val: self.val ^ other.val }
+        BitSet32 { val: self.val ^ other.val }
     }
 }
 

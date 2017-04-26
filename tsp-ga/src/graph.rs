@@ -12,7 +12,7 @@ use std::fs::File;
 #[derive(Clone)]
 pub struct Graph {
     pub num_nodes: usize,
-    adj_matrix: Vec<f64>
+    adj_matrix: Vec<f64>,
 }
 
 impl fmt::Debug for Graph {
@@ -24,8 +24,7 @@ impl fmt::Debug for Graph {
                 let w = self.get(i, j);
                 if w == INFINITY {
                     s.push_str("∞\t");
-                }
-                else {
+                } else {
                     s.push_str(&format!("{}\t", w));
                 }
             }
@@ -61,13 +60,13 @@ impl Graph {
         }
 
         Graph {
-            adj_matrix: matrix, 
-            num_nodes: num_nodes
+            adj_matrix: matrix,
+            num_nodes: num_nodes,
         }
     }
 
     pub fn random_graph<R: Rng>(rng: &mut R, num_nodes: usize, x_max: f64, y_max: f64) -> Graph {
-        // Generates a list of 2-tuples of floats, adds an incrementing counter to each 
+        // Generates a list of 2-tuples of floats, adds an incrementing counter to each
         // tuple and creates a NodePt (node with ID and 2D coordinates) from it.
         let points = rng.gen_iter::<(f64, f64)>()
             .enumerate()
@@ -87,7 +86,11 @@ impl Graph {
 
     #[inline]
     pub fn get_edge(&self, n: Node, m: Node) -> Edge {
-        Edge {from: n, to: m, weight: self.get(n, m)}
+        Edge {
+            from: n,
+            to: m,
+            weight: self.get(n, m),
+        }
     }
 
     pub fn all_edges(&self) -> Vec<Edge> {
@@ -125,11 +128,10 @@ impl Graph {
         if numbers.len() >= 3 {
             let result = NodePt::new(numbers[0] as usize - 1, numbers[1], numbers[2]);
             Some(result)
-        }
-        else {  
+        } else {
             None
         }
-        
+
     }
 
     pub fn from_file(file_path: &str) -> io::Result<Graph> {
@@ -138,7 +140,7 @@ impl Graph {
         let node_opts: Vec<Option<NodePt>> = file.lines()
             .map(|r| match r {
                 Ok(string) => Graph::read_point(&string),
-                Err(_) => panic!("failed to read")
+                Err(_) => panic!("failed to read"),
             })
             .collect();
         let nodes = node_opts.iter()

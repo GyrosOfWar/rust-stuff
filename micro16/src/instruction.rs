@@ -3,14 +3,12 @@ use cpu::{AluMode, ShifterMode, CondMode};
 
 #[derive(Debug)]
 pub struct Instruction {
-    bits: BitSet32
+    bits: BitSet32,
 }
 
 impl Instruction {
     pub fn new(raw: u32) -> Instruction {
-        Instruction {
-            bits: BitSet32::new(raw)
-        }
+        Instruction { bits: BitSet32::new(raw) }
     }
 
     pub fn addr(&self) -> u8 {

@@ -2,9 +2,9 @@ pub type Node = usize;
 
 #[derive(Debug, Copy, Clone)]
 pub struct NodePt {
-    pub id: Node, 
+    pub id: Node,
     pub x: f64,
-    pub y: f64
+    pub y: f64,
 }
 
 impl NodePt {
@@ -12,7 +12,7 @@ impl NodePt {
         NodePt {
             id: node_id,
             x: x,
-            y: y
+            y: y,
         }
     }
 

@@ -9,7 +9,7 @@ use edge::Edge;
 #[derive(Debug, Clone)]
 pub struct Tour {
     pub nodes: Vec<Node>,
-    pub total_weight: f64
+    pub total_weight: f64,
 }
 
 impl PartialEq for Tour {
@@ -32,10 +32,10 @@ impl PartialOrd for Tour {
 
 impl Ord for Tour {
     fn cmp(&self, other: &Tour) -> Ordering {
-      match self.total_weight.partial_cmp(&other.total_weight) {
-          Some(ord) => ord,
-          None => Ordering::Greater
-      }
+        match self.total_weight.partial_cmp(&other.total_weight) {
+            Some(ord) => ord,
+            None => Ordering::Greater,
+        }
     }
 }
 
@@ -43,7 +43,7 @@ impl Tour {
     pub fn new(nodes: Vec<Node>, weight: f64) -> Tour {
         Tour {
             nodes: nodes,
-            total_weight: weight
+            total_weight: weight,
         }
     }
     // Calculates a tour's weight by summing up all the edge weights
@@ -60,7 +60,7 @@ impl Tour {
         }
         let last = match tour.last() {
             Some(l) => l,
-            None => panic!("Empty tour!")
+            None => panic!("Empty tour!"),
         };
         tour_weight += graph.get(tour[0], *last);
         tour_weight
@@ -90,12 +90,12 @@ impl Tour {
         let weight = Tour::calc_tour_weight(&mutated, graph);
         Tour {
             nodes: mutated,
-            total_weight: weight
+            total_weight: weight,
         }
     }
     // Crossover takes two tours (parents) and returns their child.
-    // This takes a random start and end value, copies that range of 
-    // values over to the new tour from the first parent 
+    // This takes a random start and end value, copies that range of
+    // values over to the new tour from the first parent
     // and then copies missing values to the child in the second
     // parent's order.
     pub fn crossover<R: Rng>(&self, other: Tour, graph: &Graph, rng: &mut R) -> Tour {
@@ -104,27 +104,29 @@ impl Tour {
         let mut start = rng.gen_range::<usize>(0, size);
         let mut end = rng.gen_range::<usize>(0, size);
         if start == end {
-            return self.clone()
+            return self.clone();
         }
 
         if end > start {
             swap(&mut start, &mut end);
         }
 
-        let new_tour = (0..size).map(|i| {
-            if i >= start && i <= end {
-                Some(self.nodes[0])
-            } else {
-                None
-            }     
-        }).collect::<Vec<_>>();
-        
+        let new_tour = (0..size)
+            .map(|i| {
+                if i >= start && i <= end {
+                    Some(self.nodes[0])
+                } else {
+                    None
+                }
+            })
+            .collect::<Vec<_>>();
+
         let mut i = 0;
         let mut new_tour_2: Vec<Node> = Vec::new();
         for node in new_tour.iter() {
             match *node {
                 Some(n) => new_tour_2.push(n),
-                None => { 
+                None => {
                     let v = Some(other.nodes[i]);
                     if !new_tour.contains(&v) {
                         new_tour_2.push(v.unwrap());
@@ -142,7 +144,7 @@ impl Tour {
         let mut last_node = self.nodes[0];
         for i in 1..self.nodes.len() {
             let next_node = self.nodes[i];
-            let edge = graph.get_edge(last_node,next_node);
+            let edge = graph.get_edge(last_node, next_node);
             edges.push(edge);
             last_node = next_node;
         }
