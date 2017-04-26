@@ -17,7 +17,7 @@ impl BitSet32 {
     #[inline]
     pub fn get_many(&self, start: usize, end: usize) -> u32 {
         let mut mask = 0;
-        for i in (start..end) {
+        for i in start..end {
             mask |= 1 << i;
         }
         (self.val & mask) >> start
